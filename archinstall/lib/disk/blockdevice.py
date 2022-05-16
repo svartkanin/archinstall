@@ -5,6 +5,8 @@ import logging
 import time
 from typing import Optional, Dict, Any, Iterator, Tuple, List, TYPE_CHECKING
 # https://stackoverflow.com/a/39757388/929999
+from ..models.block_device_info import AbstractBlockInfo
+
 if TYPE_CHECKING:
 	from .partition import Partition
 
@@ -15,17 +17,11 @@ from ..storage import storage
 
 
 class BlockDevice:
-	def __init__(self, path :str, info :Optional[Dict[str, Any]] = None):
-		if not info:
-			from .helpers import all_blockdevices
-			# If we don't give any information, we need to auto-fill it.
-			# Otherwise any subsequent usage will break.
-			info = all_blockdevices(partitions=False)[path].info
-
+	def __init__(self, path :str, device_info: AbstractBlockInfo):
 		self.path = path
-		self.info = info
 		self.keep_partitions = True
 		self.part_cache = {}
+		self._device_info = device_info
 
 		# TODO: Currently disk encryption is a BIT misleading.
 		#       It's actually partition-encryption, but for future-proofing this
@@ -41,9 +37,9 @@ class BlockDevice:
 	def __getitem__(self, key :str, *args :str, **kwargs :str) -> Any:
 		if hasattr(self, key):
 			return getattr(self, key)
-		elif key not in self.info:
+		elif not hasattr(self._device_info, key):
 			raise KeyError(f'{self} does not contain information: "{key}"')
-		return self.info[key]
+		return getattr(self._device_info, key)
 
 	def __len__(self) -> int:
 		return len(self.partitions)
@@ -102,23 +98,7 @@ class BlockDevice:
 		If it's a ATA-drive it returns the /dev/X device
 		And if it's a crypto-device it returns the parent device
 		"""
-		if "DEVTYPE" not in self.info:
-			raise DiskError(f'Could not locate backplane info for "{self.path}"')
-
-		if self.info['DEVTYPE'] in ['disk','loop']:
-			return self.path
-		elif self.info['DEVTYPE'][:4] == 'raid':
-			# This should catch /dev/md## raid devices
-			return self.path
-		elif self.info['DEVTYPE'] == 'crypt':
-			if 'pkname' not in self.info:
-				raise DiskError(f'A crypt device ({self.path}) without a parent kernel device name.')
-			return f"/dev/{self.info['pkname']}"
-		else:
-			log(f"Unknown blockdevice type for {self.path}: {self.info['DEVTYPE']}", level=logging.DEBUG)
-
-	# 	if not stat.S_ISBLK(os.stat(full_path).st_mode):
-	# 		raise DiskError(f'Selected disk "{full_path}" is not a block device.')
+		return self._device_info.device
 
 	@property
 	def partitions(self) -> Dict[str, Partition]:

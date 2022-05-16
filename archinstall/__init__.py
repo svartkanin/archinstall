@@ -1,7 +1,4 @@
 """Arch Linux installer - guided, templates etc."""
-import urllib.error
-import urllib.parse
-import urllib.request
 from argparse import ArgumentParser
 
 from .lib.disk import *
@@ -155,7 +152,7 @@ def get_arguments() -> Dict[str, Any]:
 	if args.creds is not None:
 		if not json_stream_to_structure('--creds', args.creds, config):
 			exit(1)
-			
+
 	# load the parameters. first the known, then the unknowns
 	config.update(vars(args))
 	config.update(parse_unspecified_argument_list(unknowns))
@@ -179,7 +176,15 @@ def load_config():
 	if arguments.get('harddrives', None) is not None:
 		if type(arguments['harddrives']) is str:
 			arguments['harddrives'] = arguments['harddrives'].split(',')
-		arguments['harddrives'] = [BlockDevice(BlockDev) for BlockDev in arguments['harddrives']]
+
+		harddrives = []
+		for dev_path in arguments['harddrives']:
+			device_info = DeviceInfoHandler.get_device_info(dev_path)
+			if device_info:
+				harddrives.append(BlockDevice(dev_path, device_info))
+
+		arguments['harddrives'] = harddrives
+
 		# Temporarily disabling keep_partitions if config file is loaded
 		# Temporary workaround to make Desktop Environments work
 	if arguments.get('profile', None) is not None:

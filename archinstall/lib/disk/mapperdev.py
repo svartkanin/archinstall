@@ -1,8 +1,8 @@
 import glob
-import pathlib
 import logging
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional, List, Dict, Any, Iterator, TYPE_CHECKING
 
 from ..exceptions import SysCallError
@@ -25,10 +25,33 @@ class MapperDev:
 		return f"/dev/mapper/{self.mappername}"
 
 	@property
+	def device_info(self):
+		from .helpers import get_parent_of_partition
+		from ... import DeviceInfoHandler
+
+		for mapper in glob.glob('/dev/mapper/*'):
+			path_obj = Path(mapper)
+
+			if path_obj.name == self.mappername and Path(mapper).is_symlink():
+				dm_device = (Path("/dev/mapper/") / path_obj.readlink()).resolve()
+
+				for slave in glob.glob(f"/sys/class/block/{dm_device.name}/slaves/*"):
+					partition_belonging_to_dmcrypt_device = Path(slave).name
+
+					dev_path = f'/dev/{partition_belonging_to_dmcrypt_device}'
+					block_info = DeviceInfoHandler.get_device_info(dev_path)
+
+					parent_path = get_parent_of_partition('/dev/' / Path(block_info.DEVNAME))
+					device_info = DeviceInfoHandler.get_device_info(parent_path)
+					return device_info
+
+		raise ValueError(f"Could not convert {self.mappername} to a real dm-crypt device")
+
+	@property
 	def partition(self):
+		from ... import DeviceInfoHandler
 		from .helpers import uevent, get_parent_of_partition
 		from .partition import Partition
-		from .blockdevice import BlockDevice
 
 		for mapper in glob.glob('/dev/mapper/*'):
 			path_obj = pathlib.Path(mapper)
@@ -37,16 +60,18 @@ class MapperDev:
 
 				for slave in glob.glob(f"/sys/class/block/{dm_device.name}/slaves/*"):
 					partition_belonging_to_dmcrypt_device = pathlib.Path(slave).name
-					
+
 					try:
 						uevent_data = SysCommand(f"blkid -o export /dev/{partition_belonging_to_dmcrypt_device}").decode()
 					except SysCallError as error:
 						log(f"Could not get information on device /dev/{partition_belonging_to_dmcrypt_device}: {error}", level=logging.ERROR, fg="red")
-					
-					information = uevent(uevent_data)
-					block_device = BlockDevice(get_parent_of_partition('/dev/' / pathlib.Path(information['DEVNAME'])))
 
-					return Partition(information['DEVNAME'], block_device=block_device)
+					information = uevent(uevent_data)
+
+					path = get_parent_of_partition('/dev/' / pathlib.Path(information['DEVNAME']))
+					device_info = DeviceInfoHandler.get_all_device_info().get(path, None)
+
+					return Partition(information['DEVNAME'], device_info)
 
 		raise ValueError(f"Could not convert {self.mappername} to a real dm-crypt device")
 
@@ -77,7 +102,7 @@ class MapperDev:
 	@property
 	def subvolumes(self) -> Iterator['BtrfsSubvolume']:
 		from .btrfs import get_subvolumes_from_findmnt
-		
+
 		for mountpoint in self.mount_information:
 			for result in get_subvolumes_from_findmnt(mountpoint):
 				yield result

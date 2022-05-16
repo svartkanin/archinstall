@@ -162,9 +162,11 @@ class luks2:
 		if os.path.islink(f'/dev/mapper/{mountpoint}'):
 			self.mapdev = f'/dev/mapper/{mountpoint}'
 
+			mapper_dev_info = MapperDev(mountpoint).device_info
+
 			unlocked_partition = Partition(
 				self.mapdev,
-				block_device=MapperDev(mountpoint).partition.block_device,
+				device_info=mapper_dev_info,
 				encrypted=True,
 				filesystem=get_filesystem_type(self.mapdev),
 				autodetect_filesystem=False

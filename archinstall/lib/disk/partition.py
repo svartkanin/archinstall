@@ -9,16 +9,18 @@ from typing import Optional, Dict, Any, List, Union, Iterator
 
 from .blockdevice import BlockDevice
 from .helpers import find_mountpoint, get_filesystem_type, convert_size_to_gb, split_bind_name
+from ..models.block_device_info import AbstractBlockInfo
 from ..storage import storage
 from ..exceptions import DiskError, SysCallError, UnknownFilesystemFormat
 from ..output import log
 from ..general import SysCommand
 from .btrfs import get_subvolumes_from_findmnt, BtrfsSubvolume
 
+
 class Partition:
 	def __init__(self,
 		path: str,
-		block_device: BlockDevice,
+		device_info: AbstractBlockInfo,
 		part_id :Optional[str] = None,
 		filesystem :Optional[str] = None,
 		mountpoint :Optional[str] = None,
@@ -28,10 +30,6 @@ class Partition:
 		if not part_id:
 			part_id = os.path.basename(path)
 
-		self.block_device = block_device
-		if type(self.block_device) is str:
-			raise ValueError(f"Partition()'s 'block_device' parameter has to be a archinstall.BlockDevice() instance!")
-
 		self.path = path
 		self.part_id = part_id
 		self.target_mountpoint = mountpoint
@@ -39,6 +37,7 @@ class Partition:
 		self._encrypted = None
 		self.encrypted = encrypted
 		self.allow_formatting = False
+		self._device_info = device_info
 
 		if mountpoint:
 			self.mount(mountpoint)
@@ -114,7 +113,7 @@ class Partition:
 
 	@property
 	def start(self) -> Optional[str]:
-		output = json.loads(SysCommand(f"sfdisk --json {self.block_device.path}").decode('UTF-8'))
+		output = json.loads(SysCommand(f"sfdisk --json {self._device_info.path}").decode('UTF-8'))
 
 		for partition in output.get('partitiontable', {}).get('partitions', []):
 			if partition['node'] == self.path:
@@ -124,7 +123,7 @@ class Partition:
 	def end(self) -> Optional[str]:
 		# TODO: actually this is size in sectors unit
 		# TODO: Verify that the logic holds up, that 'size' is the size without 'start' added to it.
-		output = json.loads(SysCommand(f"sfdisk --json {self.block_device.path}").decode('UTF-8'))
+		output = json.loads(SysCommand(f"sfdisk --json {self._device_info.path}").decode('UTF-8'))
 
 		for partition in output.get('partitiontable', {}).get('partitions', []):
 			if partition['node'] == self.path:
@@ -132,7 +131,7 @@ class Partition:
 
 	@property
 	def end_sectors(self) -> Optional[str]:
-		output = json.loads(SysCommand(f"sfdisk --json {self.block_device.path}").decode('UTF-8'))
+		output = json.loads(SysCommand(f"sfdisk --json {self._device_info.path}").decode('UTF-8'))
 
 		for partition in output.get('partitiontable', {}).get('partitions', []):
 			if partition['node'] == self.path:
@@ -157,7 +156,7 @@ class Partition:
 
 	@property
 	def boot(self) -> bool:
-		output = json.loads(SysCommand(f"sfdisk --json {self.block_device.path}").decode('UTF-8'))
+		output = json.loads(SysCommand(f"sfdisk --json {self._device_info.path}").decode('UTF-8'))
 
 		# Get the bootable flag from the sfdisk output:
 		# {
@@ -194,7 +193,7 @@ class Partition:
 		for i in range(storage['DISK_RETRY_ATTEMPTS']):
 			if not self.partprobe():
 				raise DiskError(f"Could not perform partprobe on {self.device_path}")
-				
+
 			time.sleep(max(0.1, storage['DISK_TIMEOUTS'] * i))
 
 			partuuid = self._safe_uuid
@@ -211,7 +210,7 @@ class Partition:
 		For instance when you want to get a __repr__ of the class.
 		"""
 		if not self.partprobe():
-			if self.block_device.info.get('TYPE') == 'iso9660':
+			if self._device_info.TYPE == 'iso9660':
 				return None
 
 			log(f"Could not reliably refresh PARTUUID of partition {self.device_path} due to partprobe error.", level=logging.DEBUG)
@@ -219,7 +218,7 @@ class Partition:
 		try:
 			return SysCommand(f'blkid -s PARTUUID -o value {self.device_path}').decode('UTF-8').strip()
 		except SysCallError as error:
-			if self.block_device.info.get('TYPE') == 'iso9660':
+			if self._device_info.TYPE == 'iso9660':
 				# Parent device is a Optical Disk (.iso dd'ed onto a device for instance)
 				return None
 
@@ -268,8 +267,8 @@ class Partition:
 
 	def partprobe(self) -> bool:
 		try:
-			if self.block_device:
-				return 0 == SysCommand(f'partprobe {self.block_device.device}').exit_code
+			if self._device_info:
+				return 0 == SysCommand(f'partprobe {self._device_info.device}').exit_code
 		except SysCallError as error:
 			log(f"Unreliable results might be given for {self.path} due to partprobe error: {error}", level=logging.DEBUG)
 

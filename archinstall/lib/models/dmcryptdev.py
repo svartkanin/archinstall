@@ -3,22 +3,22 @@ import logging
 import json
 from dataclasses import dataclass
 from typing import Optional
-from ..exceptions import SysCallError
-from ..general import SysCommand
-from ..output import log
-from .mapperdev import MapperDev
+from archinstall.lib.exceptions import SysCallError
+from archinstall.lib.general import SysCommand
+from archinstall.lib.output import log
+from archinstall.lib.disk.mapperdev import MapperDev
 
 @dataclass
 class DMCryptDev:
 	dev_path :pathlib.Path
 
 	@property
-	def name(self):
+	def name(self) -> str:
 		with open(f"/sys/devices/virtual/block/{pathlib.Path(self.path).name}/dm/name", "r") as fh:
 			return fh.read().strip()
 
 	@property
-	def path(self):
+	def path(self) -> str:
 		return f"/dev/mapper/{self.dev_path}"
 
 	@property
@@ -26,7 +26,7 @@ class DMCryptDev:
 		pass
 
 	@property
-	def MapperDev(self):
+	def MapperDev(self) -> MapperDev:
 		return MapperDev(mappername=self.name)
 
 	@property
