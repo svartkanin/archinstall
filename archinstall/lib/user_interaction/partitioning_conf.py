@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 from typing import List, Any, Dict, Union, TYPE_CHECKING, Callable, Optional
 
+from ..disk.partitioning_visualizer import PartitioningVisualizer
 from ..menu import Menu
 from ..menu.menu import MenuSelectionType
 from ..output import log, FormattedOutput
@@ -182,6 +183,10 @@ def manage_new_and_existing_partitions(block_device: 'BlockDevice') -> Dict[str,
 				modes += [set_btrfs_subvolumes]
 
 		title = _('Select what to do with\n{}').format(block_device)
+
+		visualizer = PartitioningVisualizer(block_device)
+		test = visualizer.paint()
+		title += '\n\n' + test + '\n\n'
 
 		# show current partition layout:
 		if len(block_device_struct["partitions"]):
