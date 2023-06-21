@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 from os import system
-from typing import Dict, List, Union, Any, TYPE_CHECKING, Optional, Callable
+from typing import Dict, List, Union, Any, TYPE_CHECKING, Optional, Callable, Iterable
 
 from simple_term_menu import TerminalMenu  # type: ignore
 
@@ -54,7 +54,7 @@ class Menu(TerminalMenu):
 	def __init__(
 		self,
 		title: str,
-		p_options: Union[List[str], Dict[str, Any]],
+		p_options: Union[Iterable[str], Dict[str, Any]],
 		skip: bool = True,
 		multi: bool = False,
 		default_option: Optional[str] = None,

@@ -123,8 +123,8 @@ def select_disk_config(
 ) -> Optional[disk.DiskLayoutConfiguration]:
 	options = {
 		'default_layout': disk.DiskLayoutType.Default.display_msg(),
-		'default_lvm': disk.DiskLayoutType.Default_Lvm.display_msg(),
 		'manual_mode': disk.DiskLayoutType.Manual.display_msg(),
+		'default_lvm': disk.DiskLayoutType.Default_Lvm.display_msg(),
 		'pre_mount_mode': disk.DiskLayoutType.Pre_mount.display_msg()
 	}
 
@@ -134,7 +134,7 @@ def select_disk_config(
 
 	choice = Menu(
 		_('Select a partitioning option'),
-		options,
+		options.values(),
 		allow_reset=True,
 		allow_reset_warning_msg=warning,
 		sort=False,
@@ -148,7 +148,7 @@ def select_disk_config(
 		case MenuSelectionType.Selection:
 			selection_value: str = choice.single_value
 
-			if selection_value == options['default_layout']:
+			if selection_value == options['pre_mount_mode']:
 				output = "You will use whatever drive-setup is mounted at the specified directory\n"
 				output += "WARNING: Archinstall won't check the suitability of this setup\n"
 
@@ -174,7 +174,7 @@ def select_disk_config(
 							config_type=disk.DiskLayoutType.Default,
 							device_modifications=modifications
 						)
-				elif selection_value == options['lvm']:
+				elif selection_value == options['default_lvm']:
 					modifications = get_default_lvm_layout(devices)
 					if modifications:
 						return disk.DiskLayoutConfiguration(
