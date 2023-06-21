@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, Optional, Any, TYPE_CHECKING, List
 
+from . import DiskLayoutConfiguration
 from ..disk import (
 	DeviceModification,
 	PartitionModification,
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
 class DiskEncryptionMenu(AbstractSubMenu):
 	def __init__(
 		self,
-		mods: List[DeviceModification],
+		disk_config: DiskLayoutConfiguration,
 		data_store: Dict[str, Any],
 		preset: Optional[DiskEncryption] = None
 	):
@@ -35,7 +36,7 @@ class DiskEncryptionMenu(AbstractSubMenu):
 		else:
 			self._preset = DiskEncryption()
 
-		self._modifications = mods
+		self._disk_config = disk_config
 		super().__init__(data_store=data_store)
 
 	def setup_selection_menu_options(self):
@@ -59,9 +60,9 @@ class DiskEncryptionMenu(AbstractSubMenu):
 		self._menu_options['partitions'] = \
 			Selector(
 				_('Partitions'),
-				func=lambda preset: select_partitions_to_encrypt(self._modifications.device_modifications, preset),
+				func=lambda preset: select_partitions_to_encrypt(self._disk_config.device_modifications, preset),
 				display_func=lambda x: f'{len(x)} {_("Partitions")}' if x else None,
-				dependencies=['encryption_password'],
+				dependencies=['encryption_password', self._should_enable_partitions],
 				default=self._preset.partitions,
 				preview_func=self._prev_disk_layouts,
 				enabled=True
@@ -75,6 +76,12 @@ class DiskEncryptionMenu(AbstractSubMenu):
 				default=self._preset.hsm_device,
 				enabled=True
 			)
+
+	def _should_enable_partitions(self) -> bool:
+		encryption_type: Optional[EncryptionType] = self._menu_options['encryption_type'].current_selection
+		if encryption_type and encryption_type == EncryptionType.Luks:
+			return True
+		return False
 
 	def run(self, allow_reset: bool = True) -> Optional[DiskEncryption]:
 		super().run(allow_reset=allow_reset)
@@ -110,16 +117,17 @@ class DiskEncryptionMenu(AbstractSubMenu):
 def select_encryption_type(preset: EncryptionType) -> Optional[EncryptionType]:
 	title = str(_('Select disk encryption option'))
 	options = [
-		EncryptionType.type_to_text(EncryptionType.Luks)
+		EncryptionType.type_to_text(EncryptionType.Luks),
+		EncryptionType.type_to_text(EncryptionType.LvmOnLuks)
 	]
 
 	preset_value = EncryptionType.type_to_text(preset)
-	choice = Menu(title, options, preset_values=preset_value).run()
+	choice = Menu(title, options, preset_values=preset_value, sort=False).run()
 
 	match choice.type_:
 		case MenuSelectionType.Reset: return None
 		case MenuSelectionType.Skip: return preset
-		case MenuSelectionType.Selection: return EncryptionType.text_to_type(choice.value)  # type: ignore
+		case MenuSelectionType.Selection: return EncryptionType.text_to_type(choice.single_value)
 
 
 def select_encrypted_password() -> Optional[str]:

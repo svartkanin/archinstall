@@ -51,7 +51,7 @@ class FilesystemHandler:
 			partition_table = PartitionTable.MBR
 
 		for mod in device_mods:
-			device_handler.partition(mod, partition_table=partition_table)
+			device_handler.partition(mod, partition_table=partition_table, enc_conf=self._enc_config)
 			device_handler.format(mod, enc_conf=self._enc_config)
 
 			for part_mod in mod.partitions:

@@ -71,7 +71,6 @@ def get_default_partition_layout(
 	filesystem_type: Optional[disk.FilesystemType] = None,
 	advanced_option: bool = False
 ) -> List[disk.DeviceModification]:
-
 	if len(devices) == 1:
 		device_modification = suggest_single_disk_layout(
 			devices[0],
@@ -85,6 +84,20 @@ def get_default_partition_layout(
 			filesystem_type=filesystem_type,
 			advanced_options=advanced_option
 		)
+
+
+def get_default_lvm_layout(
+	devices: List[disk.BDevice],
+	filesystem_type: Optional[disk.FilesystemType] = None
+) -> List[disk.DeviceModification]:
+	if len(devices) == 1:
+		device_modification = suggest_single_lvm_layout(
+			devices[0],
+			filesystem_type=filesystem_type
+		)
+		return [device_modification]
+	else:
+		raise ValueError('Multiple devices not supported')
 
 
 def _manual_partitioning(
@@ -108,11 +121,14 @@ def select_disk_config(
 	preset: Optional[disk.DiskLayoutConfiguration] = None,
 	advanced_option: bool = False
 ) -> Optional[disk.DiskLayoutConfiguration]:
-	default_layout = disk.DiskLayoutType.Default.display_msg()
-	manual_mode = disk.DiskLayoutType.Manual.display_msg()
-	pre_mount_mode = disk.DiskLayoutType.Pre_mount.display_msg()
+	options = {
+		'default_layout': disk.DiskLayoutType.Default.display_msg(),
+		'default_lvm': disk.DiskLayoutType.Default_Lvm.display_msg(),
+		'manual_mode': disk.DiskLayoutType.Manual.display_msg(),
+		'pre_mount_mode': disk.DiskLayoutType.Pre_mount.display_msg()
+	}
 
-	options = [default_layout, manual_mode, pre_mount_mode]
+	# options = [default_layout, manual_mode, lvm, pre_mount_mode]
 	preset_value = preset.config_type.display_msg() if preset else None
 	warning = str(_('Are you sure you want to reset this setting?'))
 
@@ -130,7 +146,9 @@ def select_disk_config(
 		case MenuSelectionType.Skip: return preset
 		case MenuSelectionType.Reset: return None
 		case MenuSelectionType.Selection:
-			if choice.single_value == pre_mount_mode:
+			selection_value: str = choice.single_value
+
+			if selection_value == options['default_layout']:
 				output = "You will use whatever drive-setup is mounted at the specified directory\n"
 				output += "WARNING: Archinstall won't check the suitability of this setup\n"
 
@@ -142,30 +160,36 @@ def select_disk_config(
 					relative_mountpoint=path,
 					device_modifications=mods
 				)
+			else:
+				preset_devices = [mod.device for mod in preset.device_modifications] if preset else []
+				devices = select_devices(preset_devices)
 
-			preset_devices = [mod.device for mod in preset.device_modifications] if preset else []
+				if not devices:
+					return None
 
-			devices = select_devices(preset_devices)
+				if selection_value == options['default_layout']:
+					modifications = get_default_partition_layout(devices, advanced_option=advanced_option)
+					if modifications:
+						return disk.DiskLayoutConfiguration(
+							config_type=disk.DiskLayoutType.Default,
+							device_modifications=modifications
+						)
+				elif selection_value == options['lvm']:
+					modifications = get_default_lvm_layout(devices)
+					if modifications:
+						return disk.DiskLayoutConfiguration(
+							config_type=disk.DiskLayoutType.Default,
+							device_modifications=modifications
+						)
+				elif selection_value == options['manual_mode']:
+					preset_mods = preset.device_modifications if preset else []
+					modifications = _manual_partitioning(preset_mods, devices)
 
-			if not devices:
-				return None
-
-			if choice.value == default_layout:
-				modifications = get_default_partition_layout(devices, advanced_option=advanced_option)
-				if modifications:
-					return disk.DiskLayoutConfiguration(
-						config_type=disk.DiskLayoutType.Default,
-						device_modifications=modifications
-					)
-			elif choice.value == manual_mode:
-				preset_mods = preset.device_modifications if preset else []
-				modifications = _manual_partitioning(preset_mods, devices)
-
-				if modifications:
-					return disk.DiskLayoutConfiguration(
-						config_type=disk.DiskLayoutType.Manual,
-						device_modifications=modifications
-					)
+					if modifications:
+						return disk.DiskLayoutConfiguration(
+							config_type=disk.DiskLayoutType.Manual,
+							device_modifications=modifications
+						)
 
 	return None
 
@@ -391,3 +415,10 @@ def suggest_multi_disk_layout(
 	home_device_modification.add_partition(home_partition)
 
 	return [root_device_modification, home_device_modification]
+
+
+def suggest_single_lvm_layout(
+	device: disk.BDevice,
+	filesystem_type: Optional[disk.FilesystemType] = None
+) -> disk.DeviceModification:
+	pass

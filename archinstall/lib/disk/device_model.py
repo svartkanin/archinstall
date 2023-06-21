@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
 class DiskLayoutType(Enum):
 	Default = 'default_layout'
+	Default_Lvm = 'default_lvm'
 	Manual = 'manual_partitioning'
 	Pre_mount = 'pre_mounted_config'
 
@@ -34,6 +35,7 @@ class DiskLayoutType(Enum):
 			case DiskLayoutType.Default: return str(_('Use a best-effort default partition layout'))
 			case DiskLayoutType.Manual: return str(_('Manual Partitioning'))
 			case DiskLayoutType.Pre_mount: return str(_('Pre-mounted configuration'))
+			case DiskLayoutType.Default_Lvm: return str(_('Use a default LVM layout'))
 
 
 @dataclass
@@ -755,13 +757,15 @@ class DeviceModification:
 
 
 class EncryptionType(Enum):
-	NoEncryption = "no_encryption"
-	Luks = "luks"
+	NoEncryption = 'no_encryption'
+	Luks = 'luks'
+	LvmOnLuks = 'lvm_on_luks'
 
 	@classmethod
 	def _encryption_type_mapper(cls) -> Dict[str, 'EncryptionType']:
 		return {
-			'Luks': EncryptionType.Luks
+			'Luks': EncryptionType.Luks,
+			'LVM on Luks': EncryptionType.LvmOnLuks
 		}
 
 	@classmethod

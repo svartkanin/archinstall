@@ -12,7 +12,6 @@ from .models.bootloader import Bootloader
 from .models.users import User
 from .output import FormattedOutput
 from .profile.profile_menu import ProfileConfiguration
-from .storage import storage
 from .configuration import save_config
 from .interactions import add_number_of_parrallel_downloads
 from .interactions import ask_additional_packages_to_install
@@ -28,6 +27,7 @@ from .interactions import select_kernel
 from .utils.util import format_cols
 from .interactions import ask_ntp
 from .interactions.disk_conf import select_disk_config
+from .storage import storage
 
 if TYPE_CHECKING:
 	_: Any

@@ -450,10 +450,17 @@ class DeviceHandler(object):
 	def partition(
 		self,
 		modification: DeviceModification,
-		partition_table: Optional[PartitionTable] = None
+		partition_table: Optional[PartitionTable] = None,
+		enc_conf: Optional['DiskEncryption'] = None
 	):
 		"""
 		Create a partition table on the block device and create all partitions.
+		The encryption configuration is used to determine what partition layout
+		to create:
+			* LUKS: Create each defined partition as a single partion on the disk
+			* LVM on LUKS: Creates a /boot partition and a partition that contains
+				the LVM, inside the LVM all remaining partitions will be created as
+				logical volumes
 		"""
 		if modification.wipe:
 			if partition_table is None:
