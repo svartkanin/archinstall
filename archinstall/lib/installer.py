@@ -194,7 +194,7 @@ class Installer:
 			for part_mod in sorted_part_mods:
 				if luks_handler := luks_handlers.get(part_mod):
 					# mount encrypted partition
-					self._mount_luks_partiton(part_mod, luks_handler)
+					self._mount_luks_partition(part_mod, luks_handler)
 				else:
 					# partition is not encrypted
 					self._mount_partition(part_mod)
@@ -219,7 +219,7 @@ class Installer:
 		if part_mod.fs_type == disk.FilesystemType.Btrfs and part_mod.dev_path:
 			self._mount_btrfs_subvol(part_mod.dev_path, part_mod.btrfs_subvols)
 
-	def _mount_luks_partiton(self, part_mod: disk.PartitionModification, luks_handler: Luks2):
+	def _mount_luks_partition(self, part_mod: disk.PartitionModification, luks_handler: Luks2):
 		# it would be none if it's btrfs as the subvolumes will have the mountpoints defined
 		if part_mod.mountpoint and luks_handler.mapper_dev:
 			target = self.target / part_mod.relative_mountpoint
@@ -315,7 +315,7 @@ class Installer:
 			raise RequirementError(f'Could not generate fstab, strapping in packages most likely failed (disk out of space?)\n Error: {err}')
 
 		if not gen_fstab:
-			raise RequirementError(f'Genrating fstab returned empty value')
+			raise RequirementError(f'Generating fstab returned empty value')
 
 		with open(fstab_path, 'a') as fp:
 			fp.write(gen_fstab)
@@ -434,7 +434,7 @@ class Installer:
 
 		return False
 
-	def activate_time_syncronization(self) -> None:
+	def activate_time_synchronization(self) -> None:
 		info('Activating systemd-timesyncd for time synchronization using Arch Linux and ntp.org NTP servers')
 		self.enable_service('systemd-timesyncd')
 
@@ -715,6 +715,44 @@ class Installer:
 				return root
 		return None
 
+	def _get_kernel_params(self, root_partition: disk.PartitionModification) -> List[str]:
+		kernel_parameters = []
+
+		if root_partition in self._disk_encryption.partitions:
+			# TODO: We need to detect if the encrypted device is a whole disk encryption,
+			#       or simply a partition encryption. Right now we assume it's a partition (and we always have)
+			debug('Root partition is an encrypted device, identifying by PARTUUID: {root_partition.partuuid}')
+
+			if self._disk_encryption and self._disk_encryption.hsm_device:
+				# Note: lsblk UUID must be used, not PARTUUID for sd-encrypt to work
+				kernel_parameters.append(f'rd.luks.name={root_partition.uuid}=luksdev')
+				# Note: tpm2-device and fido2-device don't play along very well:
+				# https://github.com/archlinux/archinstall/pull/1196#issuecomment-1129715645
+				kernel_parameters.append('rd.luks.options=fido2-device=auto,password-echo=no')
+			else:
+				kernel_parameters.append(f'cryptdevice=PARTUUID={root_partition.partuuid}:luksdev')
+
+			kernel_parameters.append('root=/dev/mapper/luksdev')
+		else:
+			debug(f'Identifying root partition by PARTUUID: {root_partition.partuuid}')
+			kernel_parameters.append(f'root=PARTUUID={root_partition.partuuid}')
+
+		# Zswap should be disabled when using zram.
+		# https://github.com/archlinux/archinstall/issues/881
+		if self._zram_enabled:
+			kernel_parameters.append('zswap.enabled=0')
+
+		for sub_vol in root_partition.btrfs_subvols:
+			if sub_vol.is_root():
+				kernel_parameters.append(f'rootflags=subvol={sub_vol.name}')
+				break
+
+		kernel_parameters.append('rw')
+		kernel_parameters.append(f'rootfstype={root_partition.safe_fs_type.fs_type_mount}')
+		kernel_parameters.extend(self._kernel_params)
+
+		return kernel_parameters
+
 	def _add_systemd_bootloader(
 		self,
 		boot_partition: disk.PartitionModification,
@@ -798,42 +836,7 @@ class Installer:
 					"Archinstall won't add any ucode to systemd-boot config.",
 				)
 
-		options_entry = []
-
-		if root_partition in self._disk_encryption.partitions:
-			# TODO: We need to detect if the encrypted device is a whole disk encryption,
-			#       or simply a partition encryption. Right now we assume it's a partition (and we always have)
-			debug('Root partition is an encrypted device, identifying by PARTUUID: {root_partition.partuuid}')
-
-			if self._disk_encryption and self._disk_encryption.hsm_device:
-				# Note: lsblk UUID must be used, not PARTUUID for sd-encrypt to work
-				options_entry.append(f'rd.luks.name={root_partition.uuid}=luksdev')
-				# Note: tpm2-device and fido2-device don't play along very well:
-				# https://github.com/archlinux/archinstall/pull/1196#issuecomment-1129715645
-				options_entry.append('rd.luks.options=fido2-device=auto,password-echo=no')
-			else:
-				options_entry.append(f'cryptdevice=PARTUUID={root_partition.partuuid}:luksdev')
-
-			options_entry.append('root=/dev/mapper/luksdev')
-		else:
-			debug(f'Identifying root partition by PARTUUID: {root_partition.partuuid}')
-			options_entry.append(f'root=PARTUUID={root_partition.partuuid}')
-
-		# Zswap should be disabled when using zram.
-		# https://github.com/archlinux/archinstall/issues/881
-		if self._zram_enabled:
-			options_entry.append('zswap.enabled=0')
-
-		for sub_vol in root_partition.btrfs_subvols:
-			if sub_vol.is_root():
-				options_entry.append(f'rootflags=subvol={sub_vol.name}')
-				break
-
-		options_entry.append('rw')
-		options_entry.append(f'rootfstype={root_partition.safe_fs_type.fs_type_mount}')
-		options_entry.extend(self._kernel_params)
-
-		options = 'options ' + ' '.join(options_entry) + '\n'
+		options = 'options ' + ' '.join(self._get_kernel_params(root_partition)) + '\n'
 
 		for kernel in self.kernels:
 			for variant in ("", "-fallback"):
@@ -1008,7 +1011,7 @@ When = PostTransaction
 Exec = /bin/sh -c \\"/usr/bin/limine bios-install /dev/disk/by-uuid/{root_uuid} && /usr/bin/cp /usr/share/limine/limine-bios.sys /boot/\\"
 			""")
 
-		# Limine does not ship with a default configuation file. We are going to
+		# Limine does not ship with a default configuration file. We are going to
 		# create a basic one that is similar to the one GRUB generates.
 		try:
 			config = f"""
@@ -1058,19 +1061,7 @@ TIMEOUT=5
 			else:
 				debug(f"Unknown CPU vendor '{vendor}' detected. Archinstall won't add any ucode to firmware boot entry.")
 
-		# blkid doesn't trigger on loopback devices really well,
-		# so we'll use the old manual method until we get that sorted out.
-
-		kernel_parameters = []
-
-		if root_partition in self._disk_encryption.partitions:
-			# TODO: We need to detect if the encrypted device is a whole disk encryption,
-			#       or simply a partition encryption. Right now we assume it's a partition (and we always have)
-			debug(f'Root partition is an encrypted device identifying by PARTUUID: {root_partition.partuuid}')
-			kernel_parameters.append(f'cryptdevice=PARTUUID={root_partition.partuuid}:luksdev root=/dev/mapper/luksdev rw rootfstype={root_partition.safe_fs_type.value} {" ".join(self._kernel_params)}')
-		else:
-			debug(f'Identifying root partition by PARTUUID: {root_partition.partuuid}')
-			kernel_parameters.append(f'root=PARTUUID={root_partition.partuuid} rw rootfstype={root_partition.safe_fs_type.value} {" ".join(self._kernel_params)}')
+		kernel_parameters = self._get_kernel_params(root_partition)
 
 		parent_dev_path = disk.device_handler.get_parent_device_path(boot_partition.safe_dev_path)
 
