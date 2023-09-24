@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import unicodedata
 from enum import Enum
 
 from pathlib import Path
@@ -11,15 +12,17 @@ from .storage import storage
 
 
 class FormattedOutput:
+
 	@classmethod
-	def values(
+	def _get_values(
 		cls,
 		o: Any,
 		class_formatter: Optional[Union[str, Callable]] = None,
 		filter_list: List[str] = []
 	) -> Dict[str, Any]:
-		""" the original values returned a dataclass as dict thru the call to some specific methods
-		this version allows thru the parameter class_formatter to call a dynamicly selected formatting method.
+		"""
+		the original values returned a dataclass as dict thru the call to some specific methods
+		this version allows thru the parameter class_formatter to call a dynamically selected formatting method.
 		Can transmit a filter list to the class_formatter,
 		"""
 		if class_formatter:
@@ -33,8 +36,8 @@ class FormattedOutput:
 				return func(filter_list)
 
 			raise ValueError('Unsupported formatting call')
-		elif hasattr(o, 'as_json'):
-			return o.as_json()
+		elif hasattr(o, 'table_data'):
+			return o.table_data()
 		elif hasattr(o, 'json'):
 			return o.json()
 		elif is_dataclass(o):
@@ -58,7 +61,7 @@ class FormattedOutput:
 		is for compatibility with a print statement
 		As_table_filter can be a drop in replacement for as_table
 		"""
-		raw_data = [cls.values(o, class_formatter, filter_list) for o in obj]
+		raw_data = [cls._get_values(o, class_formatter, filter_list) for o in obj]
 
 		# determine the maximum column size
 		column_width: Dict[str, int] = {}
@@ -81,7 +84,7 @@ class FormattedOutput:
 			if capitalize:
 				key = key.capitalize()
 
-			key_list.append(key.ljust(width))
+			key_list.append(unicode_ljust(key, width))
 
 		output += ' | '.join(key_list) + '\n'
 		output += '-' * len(output) + '\n'
@@ -92,18 +95,24 @@ class FormattedOutput:
 			for key in filter_list:
 				width = column_width.get(key, len(key))
 				value = record.get(key, '')
+
 				if '!' in key:
 					value = '*' * width
-				if isinstance(value,(int, float)) or (isinstance(value, str) and value.isnumeric()):
-					obj_data.append(str(value).rjust(width))
+
+				if isinstance(value, (int, float)) or (isinstance(value, str) and value.isnumeric()):
+					obj_data.append(unicode_rjust(str(value), width))
 				else:
-					obj_data.append(str(value).ljust(width))
+					obj_data.append(unicode_ljust(str(value), width))
+
 			output += ' | '.join(obj_data) + '\n'
 
 		return output
 
 	@classmethod
 	def as_columns(cls, entries: List[str], cols: int) -> str:
+		"""
+		Will format a list into a given number of columns
+		"""
 		chunks = []
 		output = ''
 
@@ -135,7 +144,7 @@ class Journald:
 		log_adapter.log(level, message)
 
 
-def check_log_permissions():
+def _check_log_permissions():
 	filename = storage.get('LOG_FILE', None)
 	log_dir = storage.get('LOG_PATH', Path('./'))
 
@@ -292,6 +301,10 @@ def log(
 	reset: bool = False,
 	font: List[Font] = []
 ):
+	# leave this check here as we need to setup the logging
+	# right from the beginning when the modules are loaded
+	_check_log_permissions()
+
 	text = orig_string = ' '.join([str(x) for x in msgs])
 
 	# Attempt to colorize the output if supported
@@ -306,9 +319,41 @@ def log(
 
 	Journald.log(text, level=level)
 
-	# Finally, print the log unless we skipped it based on level.
-	# We use sys.stdout.write()+flush() instead of print() to try and
-	# fix issue #94
-	if level != logging.DEBUG or storage.get('arguments', {}).get('verbose', False):
-		sys.stdout.write(f"{text}\n")
-		sys.stdout.flush()
+	from .menu import Menu
+	if not Menu.is_menu_active():
+		# Finally, print the log unless we skipped it based on level.
+		# We use sys.stdout.write()+flush() instead of print() to try and
+		# fix issue #94
+		if level != logging.DEBUG or storage.get('arguments', {}).get('verbose', False):
+			sys.stdout.write(f"{text}\n")
+			sys.stdout.flush()
+
+def _count_wchars(string: str) -> int:
+	"Count the total number of wide characters contained in a string"
+	return sum(unicodedata.east_asian_width(c) in 'FW' for c in string)
+
+def unicode_ljust(string: str, width: int, fillbyte: str = ' ') -> str:
+	"""Return a left-justified unicode string of length width.
+	>>> unicode_ljust('Hello', 15, '*')
+	'Hello**********'
+	>>> unicode_ljust('你好', 15, '*')
+	'你好***********'
+	>>> unicode_ljust('안녕하세요', 15, '*')
+	'안녕하세요*****'
+	>>> unicode_ljust('こんにちは', 15, '*')
+	'こんにちは*****'
+	"""
+	return string.ljust(width - _count_wchars(string), fillbyte)
+
+def unicode_rjust(string: str, width: int, fillbyte: str = ' ') -> str:
+	"""Return a right-justified unicode string of length width.
+	>>> unicode_rjust('Hello', 15, '*')
+	'**********Hello'
+	>>> unicode_rjust('你好', 15, '*')
+	'***********你好'
+	>>> unicode_rjust('안녕하세요', 15, '*')
+	'*****안녕하세요'
+	>>> unicode_rjust('こんにちは', 15, '*')
+	'*****こんにちは'
+	"""
+	return string.rjust(width - _count_wchars(string), fillbyte)

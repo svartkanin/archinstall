@@ -1,20 +1,21 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union, Dict, TYPE_CHECKING
+from typing import Any, List, Optional, Dict, TYPE_CHECKING
 
 from . import disk
 from .general import secret
 from .locale.locale_menu import LocaleConfiguration, LocaleMenu
 from .menu import Selector, AbstractMenu
 from .mirrors import MirrorConfiguration, MirrorMenu
-from .models import NetworkConfiguration
+from .models import NetworkConfiguration, NicType
 from .models.bootloader import Bootloader
+from .models.audio_configuration import Audio, AudioConfiguration
 from .models.users import User
 from .output import FormattedOutput
 from .profile.profile_menu import ProfileConfiguration
 from .storage import storage
 from .configuration import save_config
-from .interactions import add_number_of_parrallel_downloads
+from .interactions import add_number_of_parallel_downloads
 from .interactions import ask_additional_packages_to_install
 from .interactions import ask_for_additional_users
 from .interactions import ask_for_audio_selection
@@ -109,17 +110,16 @@ class GlobalMenu(AbstractMenu):
 				display_func=lambda x: x.profile.name if x else '',
 				preview_func=self._prev_profile
 			)
-		self._menu_options['audio'] = \
+		self._menu_options['audio_config'] = \
 			Selector(
 				_('Audio'),
 				lambda preset: self._select_audio(preset),
-				display_func=lambda x: x if x else '',
-				default=None
+				display_func=lambda x: self._display_audio(x)
 			)
 		self._menu_options['parallel downloads'] = \
 			Selector(
 				_('Parallel Downloads'),
-				lambda preset: add_number_of_parrallel_downloads(preset),
+				lambda preset: add_number_of_parallel_downloads(preset),
 				display_func=lambda x: x if x else '0',
 				default=0
 			)
@@ -142,7 +142,7 @@ class GlobalMenu(AbstractMenu):
 				lambda preset: select_additional_repositories(preset),
 				display_func=lambda x: ', '.join(x) if x else None,
 				default=[])
-		self._menu_options['nic'] = \
+		self._menu_options['network_config'] = \
 			Selector(
 				_('Network configuration'),
 				lambda preset: ask_to_configure_network(preset),
@@ -169,8 +169,8 @@ class GlobalMenu(AbstractMenu):
 		self._menu_options['install'] = \
 			Selector(
 				self._install_text(),
-				exec_func=lambda n, v: True if len(self._missing_configs()) == 0 else False,
-				preview_func=self._prev_install_missing_config,
+				exec_func=lambda n, v: self._is_config_valid(),
+				preview_func=self._prev_install_invalid_config,
 				no_store=True)
 
 		self._menu_options['abort'] = Selector(_('Abort'), exec_func=lambda n,v:exit(1))
@@ -200,6 +200,14 @@ class GlobalMenu(AbstractMenu):
 
 		return list(missing)
 
+	def _is_config_valid(self) -> bool:
+		"""
+		Checks the validity of the current configuration.
+		"""
+		if len(self._missing_configs()) != 0:
+			return False
+		return self._validate_bootloader() is None
+
 	def _update_install_text(self, name: str, value: str):
 		text = self._install_text()
 		self._menu_options['install'].update_description(text)
@@ -213,14 +221,11 @@ class GlobalMenu(AbstractMenu):
 			return _('Install ({} config(s) missing)').format(missing)
 		return _('Install')
 
-	def _display_network_conf(self, cur_value: Union[NetworkConfiguration, List[NetworkConfiguration]]) -> str:
-		if not cur_value:
-			return _('Not configured, unavailable unless setup manually')
-		else:
-			if isinstance(cur_value, list):
-				return str(_('Configured {} interfaces')).format(len(cur_value))
-			else:
-				return str(cur_value)
+	def _display_network_conf(self, config: Optional[NetworkConfiguration]) -> str:
+		if not config:
+			return str(_('Not configured, unavailable unless setup manually'))
+
+		return config.type.display_msg()
 
 	def _disk_encryption(self, preset: Optional[disk.DiskEncryption]) -> Optional[disk.DiskEncryption]:
 		mods: Optional[List[disk.DeviceModification]] = self._menu_options['disk_config'].current_selection
@@ -249,11 +254,11 @@ class GlobalMenu(AbstractMenu):
 		return None
 
 	def _prev_network_config(self) -> Optional[str]:
-		selector = self._menu_options['nic']
-		if selector.has_selection():
-			ifaces = selector.current_selection
-			if isinstance(ifaces, list):
-				return FormattedOutput.as_table(ifaces)
+		selector: Optional[NetworkConfiguration] = self._menu_options['network_config'].current_selection
+		if selector:
+			if selector.type == NicType.MANUAL:
+				output = FormattedOutput.as_table(selector.nics)
+				return output
 		return None
 
 	def _prev_additional_pkgs(self):
@@ -321,12 +326,45 @@ class GlobalMenu(AbstractMenu):
 			return disk.EncryptionType.type_to_text(current_value.encryption_type)
 		return ''
 
-	def _prev_install_missing_config(self) -> Optional[str]:
+	def _validate_bootloader(self) -> Optional[str]:
+		"""
+		Checks the selected bootloader is valid for the selected filesystem
+		type of the boot partition.
+
+		Returns [`None`] if the bootloader is valid, otherwise returns a
+		string with the error message.
+
+		XXX: The caller is responsible for wrapping the string with the translation
+			shim if necessary.
+		"""
+		bootloader = self._menu_options['bootloader'].current_selection
+		boot_partition: Optional[disk.PartitionModification] = None
+
+		if disk_config := self._menu_options['disk_config'].current_selection:
+			for layout in disk_config.device_modifications:
+				if boot_partition := layout.get_boot_partition():
+					break
+		else:
+			return "No disk layout selected"
+
+		if boot_partition is None:
+			return "Boot partition not found"
+
+		if bootloader == Bootloader.Limine and boot_partition.fs_type == disk.FilesystemType.Btrfs:
+			return "Limine bootloader does not support booting from BTRFS filesystem"
+
+		return None
+
+	def _prev_install_invalid_config(self) -> Optional[str]:
 		if missing := self._missing_configs():
 			text = str(_('Missing configurations:\n'))
 			for m in missing:
 				text += f'- {m}\n'
 			return text[:-1]  # remove last new line
+
+		if error := self._validate_bootloader():
+			return str(_(f"Invalid configuration: {error}"))
+
 		return None
 
 	def _prev_users(self) -> Optional[str]:
@@ -349,7 +387,7 @@ class GlobalMenu(AbstractMenu):
 				output += profile_config.profile.name + '\n'
 
 			if profile_config.gfx_driver:
-				output += str(_('Graphics driver')) + ': ' + profile_config.gfx_driver + '\n'
+				output += str(_('Graphics driver')) + ': ' + profile_config.gfx_driver.value + '\n'
 
 			if profile_config.greeter:
 				output += str(_('Greeter')) + ': ' + profile_config.greeter.value + '\n'
@@ -383,13 +421,18 @@ class GlobalMenu(AbstractMenu):
 		profile_config = ProfileMenu(store, preset=current_profile).run()
 		return profile_config
 
-	def _select_audio(self, current: Union[str, None]) -> Optional[str]:
-		profile_config: Optional[ProfileConfiguration] = self._menu_options['profile_config'].current_selection
-		if profile_config and profile_config.profile:
-			is_desktop = profile_config.profile.is_desktop_profile() if profile_config else False
-			selection = ask_for_audio_selection(is_desktop, current)
-			return selection
-		return None
+	def _select_audio(
+		self,
+		current: Optional[AudioConfiguration] = None
+	) -> Optional[AudioConfiguration]:
+		selection = ask_for_audio_selection(current)
+		return selection
+
+	def _display_audio(self, current: Optional[AudioConfiguration]) -> str:
+		if not current:
+			return Audio.no_audio_text()
+		else:
+			return current.audio.name
 
 	def _create_user_account(self, defined_users: List[User]) -> List[User]:
 		users = ask_for_additional_users(defined_users=defined_users)

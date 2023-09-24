@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import inspect
 from collections import Counter
 from functools import cached_property
 from pathlib import Path
@@ -11,7 +12,7 @@ from typing import List, TYPE_CHECKING, Any, Optional, Dict, Union
 
 from archinstall.default_profiles.profile import Profile, TProfile, GreeterType
 from .profile_model import ProfileConfiguration
-from ..hardware import AVAILABLE_GFX_DRIVERS
+from ..hardware import GfxDriver, GfxPackage
 from ..menu import MenuSelectionType, Menu, MenuSelection
 from ..networking import list_interfaces, fetch_data_from_url
 from ..output import error, debug, info, warn
@@ -52,9 +53,9 @@ class ProfileHandler:
 
 	def parse_profile_config(self, profile_config: Dict[str, Any]) -> Optional[Profile]:
 		"""
-		Deserialize JSON configuration
+		Deserialize JSON configuration for profile
 		"""
-		profile = None
+		profile: Optional[Profile] = None
 
 		# the order of these is important, we want to
 		# load all the default_profiles from url and custom
@@ -97,24 +98,26 @@ class ProfileHandler:
 		if main := profile_config.get('main', None):
 			profile = self.get_profile_by_name(main) if main else None
 
-		valid: List[Profile] = []
+		if not profile:
+			return None
 
-		if details := profile_config.get('details', []):
-			resolved = {detail: self.get_profile_by_name(detail) for detail in details if detail}
-			valid = [p for p in resolved.values() if p is not None]
-			invalid = ', '.join([k for k, v in resolved.items() if v is None])
+		valid_sub_profiles: List[Profile] = []
+		invalid_sub_profiles: List[str] = []
+		details: List[str] = profile_config.get('details', [])
 
-			if invalid:
-				info(f'No profile definition found: {invalid}')
+		if details:
+			for detail in filter(None, details):
+				if sub_profile := self.get_profile_by_name(detail):
+					valid_sub_profiles.append(sub_profile)
+				else:
+					invalid_sub_profiles.append(detail)
+
+			if invalid_sub_profiles:
+				info('No profile definition found: {}'.format(', '.join(invalid_sub_profiles)))
 
 		custom_settings = profile_config.get('custom_settings', {})
-		for profile in valid:
-			profile.set_custom_settings(
-				custom_settings.get(profile.name, {})
-			)
-
-		if profile is not None:
-			profile.set_current_selection(valid)
+		profile.set_custom_settings(custom_settings)
+		profile.set_current_selection(valid_sub_profiles)
 
 		return profile
 
@@ -123,14 +126,12 @@ class ProfileHandler:
 		"""
 		List of all available default_profiles
 		"""
-		if self._profiles is None:
-			self._profiles = self._find_available_profiles()
+		self._profiles = self._profiles or self._find_available_profiles()
 		return self._profiles
 
 	@cached_property
 	def _local_mac_addresses(self) -> List[str]:
-		ifaces = list_interfaces()
-		return list(ifaces.keys())
+		return list(list_interfaces())
 
 	def add_custom_profiles(self, profiles: Union[TProfile, List[TProfile]]):
 		if not isinstance(profiles, list):
@@ -173,6 +174,9 @@ class ProfileHandler:
 		service = None
 
 		match greeter:
+			case GreeterType.LightdmSlick:
+				packages = ['lightdm', 'lightdm-slick-greeter']
+				service = ['lightdm']
 			case GreeterType.Lightdm:
 				packages = ['lightdm', 'lightdm-gtk-greeter']
 				service = ['lightdm']
@@ -182,32 +186,42 @@ class ProfileHandler:
 			case GreeterType.Gdm:
 				packages = ['gdm']
 				service = ['gdm']
+			case GreeterType.Ly:
+				packages = ['ly']
+				service = ['ly']
 
 		if packages:
 			install_session.add_additional_packages(packages)
 		if service:
 			install_session.enable_service(service)
 
-	def install_gfx_driver(self, install_session: 'Installer', driver: str):
+		# slick-greeter requires a config change
+		if greeter == GreeterType.LightdmSlick:
+			path = install_session.target.joinpath('etc/lightdm/lightdm.conf')
+			with open(path, 'r') as file:
+				filedata = file.read()
+
+			filedata = filedata.replace('#greeter-session=example-gtk-gnome', 'greeter-session=lightdm-slick-greeter')
+
+			with open(path, 'w') as file:
+				file.write(filedata)
+
+	def install_gfx_driver(self, install_session: 'Installer', driver: Optional[GfxDriver]):
 		try:
-			driver_pkgs = AVAILABLE_GFX_DRIVERS[driver] if driver else []
-			additional_pkg = ' '.join(['xorg-server', 'xorg-xinit'] + driver_pkgs)
 
 			if driver is not None:
-				# Find the intersection between the set of known nvidia drivers
-				# and the selected driver packages. Since valid intesections can
-				# only have one element or none, we iterate and try to take the
-				# first element.
-				if driver_pkg := next(iter({'nvidia','nvidia-open'} & set(driver_pkgs)), None):
-					if any(kernel in install_session.base_packages for kernel in ("linux-lts", "linux-zen")):
-						for kernel in install_session.kernels:
-							# Fixes https://github.com/archlinux/archinstall/issues/585
-							install_session.add_additional_packages(f"{kernel}-headers")
+				driver_pkgs = driver.packages()
+				pkg_names = [p.value for p in driver_pkgs]
+				for driver_pkg in {GfxPackage.Nvidia, GfxPackage.NvidiaOpen} & set(driver_pkgs):
+					for kernel in {"linux-lts", "linux-zen"} & set(install_session.kernels):
+						# Fixes https://github.com/archlinux/archinstall/issues/585
+						install_session.add_additional_packages(f"{kernel}-headers")
 
 						# I've had kernel regen fail if it wasn't installed before nvidia-dkms
-						install_session.add_additional_packages(['dkms', 'xorg-server', 'xorg-xinit', f'{driver_pkg}-dkms'])
-						return
-				elif 'amdgpu' in driver_pkgs:
+					install_session.add_additional_packages(['dkms', 'xorg-server', 'xorg-xinit', f'{driver_pkg.value}-dkms'])
+					# Return after first driver match, since it is impossible to use both simultaneously.
+					return
+				if 'amdgpu' in driver_pkgs:
 					# The order of these two are important if amdgpu is installed #808
 					if 'amdgpu' in install_session.modules:
 						install_session.modules.remove('amdgpu')
@@ -217,23 +231,24 @@ class ProfileHandler:
 						install_session.modules.remove('radeon')
 					install_session.modules.append('radeon')
 
-			install_session.add_additional_packages(additional_pkg)
+				install_session.add_additional_packages(pkg_names)
 		except Exception as err:
 			warn(f"Could not handle nvidia and linuz-zen specific situations during xorg installation: {err}")
 			# Prep didn't run, so there's no driver to install
-			install_session.add_additional_packages(['xorg-server', 'xorg-xinit'])
+		install_session.add_additional_packages(['xorg-server', 'xorg-xinit'])
 
 	def install_profile_config(self, install_session: 'Installer', profile_config: ProfileConfiguration):
 		profile = profile_config.profile
 
-		if profile:
-			profile.install(install_session)
+		if not profile:
+			return
 
-		if profile and profile_config.gfx_driver:
-			if profile.is_xorg_type_profile() or profile.is_desktop_type_profile():
-				self.install_gfx_driver(install_session, profile_config.gfx_driver)
+		profile.install(install_session)
 
-		if profile and profile_config.greeter:
+		if profile_config.gfx_driver and (profile.is_xorg_type_profile() or profile.is_desktop_type_profile()):
+			self.install_gfx_driver(install_session, profile_config.gfx_driver)
+
+		if profile_config.greeter:
 			self.install_greeter(install_session, profile_config.greeter)
 
 	def _import_profile_from_url(self, url: str):
@@ -262,12 +277,15 @@ class ProfileHandler:
 		profiles = []
 		for k, v in module.__dict__.items():
 			if isinstance(v, type) and v.__module__ == module.__name__:
-				try:
-					cls_ = v()
-					if isinstance(cls_, Profile):
-						profiles.append(cls_)
-				except Exception:
-					debug(f'Cannot import {module}, it does not appear to be a Profile class')
+				bases = inspect.getmro(v)
+
+				if Profile in bases:
+					try:
+						cls_ = v()
+						if isinstance(cls_, Profile):
+							profiles.append(cls_)
+					except Exception:
+						debug(f'Cannot import {module}, it does not appear to be a Profile class')
 
 		return profiles
 
@@ -311,8 +329,7 @@ class ProfileHandler:
 		debug(f'Importing profile: {file}')
 
 		try:
-			spec = importlib.util.spec_from_file_location(name, file)
-			if spec is not None:
+			if spec := importlib.util.spec_from_file_location(name, file):
 				imported = importlib.util.module_from_spec(spec)
 				if spec.loader is not None:
 					spec.loader.exec_module(imported)
@@ -358,6 +375,7 @@ class ProfileHandler:
 		Helper function to perform a profile selection
 		"""
 		options = {p.name: p for p in selectable_profiles}
+		options = dict((k, v) for k, v in sorted(options.items(), key=lambda x: x[0].upper()))
 
 		warning = str(_('Are you sure you want to reset this setting?'))
 
@@ -375,7 +393,7 @@ class ProfileHandler:
 			allow_reset=allow_reset,
 			allow_reset_warning_msg=warning,
 			multi=multi,
-			sort=True,
+			sort=False,
 			preview_command=self.preview_text,
 			preview_size=0.5
 		).run()

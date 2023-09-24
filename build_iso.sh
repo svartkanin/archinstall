@@ -12,6 +12,7 @@ packages=(
 	python-build
 	python-setuptools
 	python-wheel
+ 	python-simple-term-menu
 	python-pyparted
 )
 
@@ -30,7 +31,7 @@ cat <<- _EOF_ | tee /tmp/archlive/airootfs/root/.zprofile
 	echo "Type archinstall to launch the installer."
 _EOF_
 
-pacman --noconfirm -S git archiso
+pacman --noconfirm -S archiso
 
 cp -r /usr/share/archiso/configs/releng/* /tmp/archlive
 

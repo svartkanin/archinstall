@@ -4,11 +4,11 @@ from typing import Callable, Any, List, Iterator, Tuple, Optional, Dict, TYPE_CH
 
 from .menu import Menu, MenuSelectionType
 from ..output import error
+from ..output import unicode_ljust
 from ..translationhandler import TranslationHandler, Language
 
 if TYPE_CHECKING:
 	_: Any
-
 
 class Selector:
 	def __init__(
@@ -128,7 +128,7 @@ class Selector:
 
 		if current:
 			padding += 5
-			description = str(self._description).ljust(padding, ' ')
+			description = unicode_ljust(str(self._description), padding, ' ')
 			current = current
 		else:
 			description = self._description
