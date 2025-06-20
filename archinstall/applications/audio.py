@@ -37,6 +37,7 @@ class AudioApp:
 			return
 
 		for user in users:
+			debug('Enabling PipeWire for user:', user.username)
 			# Create the full path for enabling the pipewire systemd items
 			service_dir = install_session.target / 'home' / user.username / '.config' / 'systemd' / 'user' / 'default.target.wants'
 			service_dir.mkdir(parents=True, exist_ok=True)
