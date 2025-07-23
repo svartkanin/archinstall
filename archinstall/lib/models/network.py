@@ -157,3 +157,30 @@ class NetworkConfiguration:
 
 				installation.enable_service('systemd-networkd')
 				installation.enable_service('systemd-resolved')
+
+
+@dataclass
+class Wifi:
+	bssid: str
+	frequency: int
+	signal_level: int
+	flags: str
+	ssid: str
+
+	@classmethod
+	def from_results(cls, results: str) -> list[Wifi]:
+		entries: list[Wifi] = []
+
+		for line in results.splitlines():
+			line = line.strip()
+			if not line:
+				continue
+
+			parts = line.split()
+			if len(parts) != 5:
+				continue
+
+			wifi = Wifi(bssid=parts[0], frequency=parts[1], signal_level=parts[2], flags=parts[3], ssid=parts[4])
+			entries.append(wifi)
+
+		return entries

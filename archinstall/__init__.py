@@ -8,6 +8,8 @@ import traceback
 
 from archinstall.lib.args import arch_config_handler
 from archinstall.lib.disk.utils import disk_layouts
+from archinstall.lib.network.wifi import wifi_handler
+from archinstall.lib.networking import ping
 from archinstall.lib.packages.packages import check_package_upgrade
 
 from .lib.hardware import SysInfo
@@ -36,6 +38,16 @@ def _log_sys_info() -> None:
 	debug(f'Disk states before installing:\n{disk_layouts()}')
 
 
+def _check_online() -> None:
+	try:
+		ping('1.1.1.1')
+	except OSError as ex:
+		if 'Network is unreachable' in str(ex):
+			wifi_handler.start_setup()
+
+	wifi_handler.start_setup()
+
+
 def _fetch_arch_db() -> None:
 	info('Fetching Arch Linux package database...')
 	try:
@@ -44,6 +56,7 @@ def _fetch_arch_db() -> None:
 		error('Failed to sync Arch Linux package database.')
 		if 'could not resolve host' in str(e).lower():
 			error('Most likely due to a missing network connection or DNS issue.')
+
 		error('Run archinstall --debug and check /var/log/archinstall/install.log for details.')
 
 		debug(f'Failed to sync Arch Linux package database: {e}')
@@ -82,6 +95,7 @@ def main() -> int:
 	_log_sys_info()
 
 	if not arch_config_handler.args.offline:
+		_check_online()
 		_fetch_arch_db()
 
 		if not arch_config_handler.args.skip_version_check:
