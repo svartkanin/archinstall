@@ -31,7 +31,7 @@ class PasswordInputWidget(App):
 	Vertical {
 		width: 50;
 		height: 8;
-		border: ascii white;
+		border: heavy white;
 		background: black;
 	}
 
@@ -105,6 +105,7 @@ class WifiHandler:
 	def start_setup(self) -> bool:
 
 		password = self._get_password_for_network('test')
+		debug(password)
 
 
 		with Tui():
