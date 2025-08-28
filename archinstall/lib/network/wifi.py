@@ -31,7 +31,7 @@ class PasswordInputWidget(App):
 	Vertical {
 		width: 50;
 		height: 8;
-		border: heavy white;
+		border: solid white;
 		background: black;
 	}
 
