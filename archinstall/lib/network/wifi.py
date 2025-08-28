@@ -25,33 +25,46 @@ class PasswordInputWidget(App):
 	CSS = """
 	Screen {
 		align: center middle;
+		background: black;
 	}
 
 	Vertical {
-		width: 60;
-		height: 10;
-		border: solid $primary;
-		background: $surface;
+		width: 50;
+		height: 8;
+		border: ascii white;
+		background: black;
 	}
 
 	Label {
 		text-align: center;
 		margin: 1 0;
+		color: white;
+		background: black;
 	}
 
 	Input {
 		margin: 1 2;
+		border: none;
+		background: black;
+		color: white;
 	}
 
 	Button {
 		margin: 1 2;
 		width: 100%;
+		border: ascii white;
+		background: black;
+		color: white;
+	}
+
+	Button:hover {
+		background: white;
+		color: black;
 	}
 	"""
 
 	BINDINGS = [
 		Binding("escape", "quit", "Quit"),
-		Binding("enter", "submit", "Submit"),
 	]
 
 	def __init__(self, ssid: str):
