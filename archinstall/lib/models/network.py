@@ -160,16 +160,26 @@ class NetworkConfiguration:
 
 
 @dataclass
-class Wifi:
+class WifiNetwork:
 	bssid: str
 	frequency: int
 	signal_level: int
 	flags: str
 	ssid: str
 
-	@classmethod
-	def from_results(cls, results: str) -> list[Wifi]:
-		entries: list[Wifi] = []
+	def table_data(self) -> dict[str, str | int]:
+		"""Format WiFi data for table display"""
+		return {
+			'SSID': self.ssid,
+			'Signal': f"{self.signal_level} dBm",
+			'Frequency': f"{self.frequency} MHz",
+			'Security': self.flags,
+			'BSSID': self.bssid,
+		}
+
+	@staticmethod
+	def from_wpa(results: str) -> list[WifiNetwork]:
+		entries: list[WifiNetwork] = []
 
 		for line in results.splitlines():
 			line = line.strip()
@@ -180,7 +190,53 @@ class Wifi:
 			if len(parts) != 5:
 				continue
 
-			wifi = Wifi(bssid=parts[0], frequency=parts[1], signal_level=parts[2], flags=parts[3], ssid=parts[4])
+			wifi = WifiNetwork(bssid=parts[0], frequency=parts[1], signal_level=parts[2], flags=parts[3], ssid=parts[4])
 			entries.append(wifi)
 
 		return entries
+
+
+@dataclass
+class WifiConfiguredNetwork:
+	network_id: int
+	ssid: str
+	bssid: str
+	flags: str
+
+	@staticmethod
+	def from_wpa(list_networks: str) -> list[WifiConfiguredNetwork]:
+		"""
+			Example output from 'wpa_cli list_networks'
+			Selected interface 'wlan0'
+			network id / ssid / bssid / flags
+			0	WifiGuest any	[CURRENT]
+			1		any	[DISABLED]
+			2		any	[DISABLED]
+		"""
+
+		lines = list_networks.strip().split('\n')[2:]
+
+		networks = []
+
+		for line in lines:
+			line = line.strip()
+			if line:
+				# Split the line by the tab character
+				parts = line.split('\t')
+
+				if len(parts) >= 4:
+					try:
+						networks.append(
+							WifiConfiguredNetwork(
+								network_id=int(parts[0]),
+								ssid=parts[1],
+								bssid=parts[2],
+								flags=parts[3]
+							)
+						)
+					except (ValueError, IndexError) as e:
+						# WARNING: Don't print the line or other output as that
+						# will contain the SSID and shared logs may exposed that
+						debug('Parsing error for network output')
+
+		return networks

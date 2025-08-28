@@ -45,7 +45,8 @@ def _check_online() -> None:
 		if 'Network is unreachable' in str(ex):
 			wifi_handler.start_setup()
 
-	wifi_handler.start_setup()
+	if not wifi_handler.start_setup():
+		exit(0)
 
 
 def _fetch_arch_db() -> None:
