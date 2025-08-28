@@ -51,6 +51,7 @@ class PasswordInputWidget(App):
 
 	BINDINGS = [
 		Binding("escape", "quit", "Quit"),
+		Binding("enter", "submit", "Submit"),
 	]
 
 	def __init__(self, ssid: str):
@@ -86,6 +87,10 @@ class WifiHandler:
 		pass
 
 	def start_setup(self) -> bool:
+
+		password = self._get_password_for_network('test')
+
+
 		with Tui():
 			prompt = tr('No network connection found') + '\n\n'
 			prompt += tr('Would you like to connect to a Wifi?') + '\n'
