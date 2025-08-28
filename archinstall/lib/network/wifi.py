@@ -76,10 +76,13 @@ class PasswordInputWidget(App):
 	def compose(self) -> ComposeResult:
 		with Center():
 			with Vertical():
-				cjk = '你好世界'
-				yield Label(f"Enter  {cjk}  password for: {self.ssid}")
+				yield Label(f"Enter password for: {self.ssid}")
 				yield Input(placeholder="Password", password=True, id="password_input")
 				yield Button("Connect", id="connect_btn")
+
+	def on_input_submitted(self, event: Input.Submitted) -> None:
+		if event.input.id == "password_input":
+			self.action_submit()
 
 	def on_button_pressed(self, event: Button.Pressed) -> None:
 		if event.button.id == "connect_btn":
