@@ -25,41 +25,74 @@ class PasswordInputWidget(App):
 	CSS = """
 	Screen {
 		align: center middle;
-		background: black;
+		background: $background;
 	}
 
 	Vertical {
-		width: 50;
-		height: 8;
-		border: solid white;
-		background: black;
+		width: 64;
+		height: 12;
+		border: solid $accent;
+		background: $surface;
+		border-title-color: $primary;
+		border-title-style: bold;
 	}
 
-	Label {
+	.title {
 		text-align: center;
 		margin: 1 0;
-		color: white;
-		background: black;
+		color: $primary;
+		text-style: bold;
+		background: $surface;
+	}
+
+	.subtitle {
+		text-align: center;
+		margin: 0 0 1 0;
+		color: $secondary;
+		text-style: italic;
+		background: $surface;
 	}
 
 	Input {
 		margin: 1 2;
-		border: none;
-		background: black;
-		color: white;
+		border: solid $accent;
+		background: $background;
+		color: $text;
+		border-title-color: $secondary;
+		border-title-style: italic;
+	}
+
+	Input:focus {
+		border: solid $primary;
+		border-title-color: $primary;
+		border-title-style: bold;
 	}
 
 	Button {
 		margin: 1 2;
 		width: 100%;
-		border: ascii white;
-		background: black;
+		border: solid $success;
+		background: $success;
 		color: white;
+		text-style: bold;
 	}
 
 	Button:hover {
-		background: white;
-		color: black;
+		background: $success-darken-1;
+		border: solid $success-darken-1;
+	}
+
+	Button:focus {
+		background: $success-lighten-1;
+		border: solid $success-lighten-1;
+	}
+
+	.help-text {
+		text-align: center;
+		margin: 1 0 0 0;
+		color: $text-muted;
+		text-style: dim;
+		background: $surface;
 	}
 	"""
 
@@ -75,10 +108,16 @@ class PasswordInputWidget(App):
 
 	def compose(self) -> ComposeResult:
 		with Center():
-			with Vertical():
-				yield Label(f"Enter password for: {self.ssid}")
-				yield Input(placeholder="Password", password=True, id="password_input")
-				yield Button("Connect", id="connect_btn")
+			with Vertical(id="main-container"):
+				yield Label("═══ WiFi Network Authentication ═══", classes="title")
+				yield Label(f"Network: {self.ssid}", classes="subtitle")
+				yield Input(
+					placeholder="Enter network password...",
+					password=True,
+					id="password_input"
+				)
+				yield Button("🔐 Connect to Network", id="connect_btn")
+				yield Label("Press ENTER to connect • ESC to cancel", classes="help-text")
 
 	def on_input_submitted(self, event: Input.Submitted) -> None:
 		if event.input.id == "password_input":
