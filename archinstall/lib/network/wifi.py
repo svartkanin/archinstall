@@ -29,12 +29,10 @@ class PasswordInputWidget(App):
 	}
 
 	Vertical {
-		width: 64;
-		height: 12;
+		width: 60;
+		height: 10;
 		border: solid $accent;
 		background: $surface;
-		border-title-color: $primary;
-		border-title-style: bold;
 	}
 
 	.title {
@@ -45,7 +43,7 @@ class PasswordInputWidget(App):
 		background: $surface;
 	}
 
-	.subtitle {
+	.network {
 		text-align: center;
 		margin: 0 0 1 0;
 		color: $secondary;
@@ -58,14 +56,10 @@ class PasswordInputWidget(App):
 		border: solid $accent;
 		background: $background;
 		color: $text;
-		border-title-color: $secondary;
-		border-title-style: italic;
 	}
 
 	Input:focus {
 		border: solid $primary;
-		border-title-color: $primary;
-		border-title-style: bold;
 	}
 
 	Button {
@@ -73,21 +67,15 @@ class PasswordInputWidget(App):
 		width: 100%;
 		border: solid $success;
 		background: $success;
-		color: white;
+		color: black;
 		text-style: bold;
 	}
 
 	Button:hover {
 		background: $success-darken-1;
-		border: solid $success-darken-1;
 	}
 
-	Button:focus {
-		background: $success-lighten-1;
-		border: solid $success-lighten-1;
-	}
-
-	.help-text {
+	.help {
 		text-align: center;
 		margin: 1 0 0 0;
 		color: $text-muted;
@@ -108,18 +96,12 @@ class PasswordInputWidget(App):
 
 	def compose(self) -> ComposeResult:
 		with Center():
-			with Vertical(id="main-container"):
-				yield Label("═══ WiFi Network Authentication ═══", classes="title")
-				yield Label(f"Network: {self.ssid}", classes="subtitle")
-				yield Label("Greek: Εισάγετε κωδικό | Cyrillic: Введите пароль", classes="help-text")
-				yield Label("Chinese: 输入密码 | Japanese: パスワードを入力", classes="help-text")
-				yield Input(
-					placeholder="Enter network password...",
-					password=True,
-					id="password_input"
-				)
-				yield Button("🔐 Connect to Network", id="connect_btn")
-				yield Label("Press ENTER to connect • ESC to cancel", classes="help-text")
+			with Vertical():
+				yield Label("WiFi Authentication", classes="title")
+				yield Label(f"Network: {self.ssid}", classes="network")
+				yield Input(placeholder="Enter password...", password=True, id="password_input")
+				yield Button("🔗 Connect", id="connect_btn")
+				yield Label("Enter to connect • Esc to cancel", classes="help")
 
 	def on_input_submitted(self, event: Input.Submitted) -> None:
 		if event.input.id == "password_input":
