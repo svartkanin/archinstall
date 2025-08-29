@@ -111,6 +111,8 @@ class PasswordInputWidget(App):
 			with Vertical(id="main-container"):
 				yield Label("═══ WiFi Network Authentication ═══", classes="title")
 				yield Label(f"Network: {self.ssid}", classes="subtitle")
+				yield Label("Greek: Εισάγετε κωδικό | Cyrillic: Введите пароль", classes="help-text")
+				yield Label("Chinese: 输入密码 | Japanese: パスワードを入力", classes="help-text")
 				yield Input(
 					placeholder="Enter network password...",
 					password=True,
