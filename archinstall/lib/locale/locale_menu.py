@@ -1,10 +1,9 @@
 from typing import override
 
+from archinstall.lib.menu.helpers import SingleSelection
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.curses_menu import SelectMenu
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
-from archinstall.tui.result import ResultType
-from archinstall.tui.types import Alignment, FrameProperties
+from archinstall.tui.ui.result import ResultType
 
 from ..menu.abstract_menu import AbstractSubMenu
 from ..models.locale import LocaleConfiguration
@@ -82,16 +81,11 @@ def select_locale_lang(preset: str | None = None) -> str | None:
 	group = MenuItemGroup(items, sort_items=True)
 	group.set_focus_by_value(preset)
 
-	result = SelectMenu[str](
-		group,
-		alignment=Alignment.CENTER,
-		frame=FrameProperties.min(tr('Locale language')),
-		allow_skip=True,
-	).run()
+	result = SingleSelection[str](header=tr('Locale language'), group=group).show()
 
 	match result.type_:
 		case ResultType.Selection:
-			return result.get_value()
+			return result.value()
 		case ResultType.Skip:
 			return preset
 		case _:
@@ -106,12 +100,7 @@ def select_locale_enc(preset: str | None = None) -> str | None:
 	group = MenuItemGroup(items, sort_items=True)
 	group.set_focus_by_value(preset)
 
-	result = SelectMenu[str](
-		group,
-		alignment=Alignment.CENTER,
-		frame=FrameProperties.min(tr('Locale encoding')),
-		allow_skip=True,
-	).run()
+	result = SingleSelection[str](header=tr('Locale encoding'), group=group).show()
 
 	match result.type_:
 		case ResultType.Selection:
@@ -138,12 +127,7 @@ def select_kb_layout(preset: str | None = None) -> str | None:
 	group = MenuItemGroup(items, sort_items=False)
 	group.set_focus_by_value(preset)
 
-	result = SelectMenu[str](
-		group,
-		alignment=Alignment.CENTER,
-		frame=FrameProperties.min(tr('Keyboard layout')),
-		allow_skip=True,
-	).run()
+	result = SingleSelection[str](header=tr('Keyboard layout'), group=group).show()
 
 	match result.type_:
 		case ResultType.Selection:

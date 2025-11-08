@@ -23,11 +23,10 @@ class WpaCliResult:
 
 class WifiHandler:
 	def __init__(self) -> None:
-		tui.set_main(self)
 		self._wpa_config = WpaSupplicantConfig()
 
 	def setup(self) -> Any:
-		result = tui.run()
+		result = tui.run(self)
 		return result
 
 	async def run(self) -> None:

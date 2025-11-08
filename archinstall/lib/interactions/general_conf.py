@@ -4,6 +4,7 @@ from enum import Enum
 from pathlib import Path
 from typing import assert_never
 
+from archinstall.lib.menu.helpers import SingleSelection
 from archinstall.lib.models.packages import Repository
 from archinstall.lib.packages.packages import list_available_packages
 from archinstall.lib.translationhandler import tr
@@ -11,6 +12,7 @@ from archinstall.tui.curses_menu import EditMenu, SelectMenu, Tui
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.result import ResultType
 from archinstall.tui.types import Alignment, FrameProperties, Orientation, PreviewStyle
+from archinstall.tui.ui.result import ResultType as UiResultType
 
 from ..locale.utils import list_timezones
 from ..models.packages import AvailablePackage, PackageGroup
@@ -127,21 +129,28 @@ def select_archinstall_language(languages: list[Language], preset: Language) -> 
 	title += 'All available fonts can be found in "/usr/share/kbd/consolefonts"\n'
 	title += 'e.g. setfont LatGrkCyr-8x16 (to display latin/greek/cyrillic characters)\n'
 
-	result = SelectMenu[Language](
-		group,
+	# result = SelectMenu[Language](
+	# group,
+	# header=title,
+	# allow_skip=True,
+	# allow_reset=False,
+	# alignment=Alignment.CENTER,
+	# frame=FrameProperties.min(header=tr('Select language')),
+	# ).run()
+
+	result = SingleSelection[Language](
 		header=title,
-		allow_skip=True,
+		group=group,
 		allow_reset=False,
-		alignment=Alignment.CENTER,
-		frame=FrameProperties.min(header=tr('Select language')),
-	).run()
+		allow_skip=True,
+	).show()
 
 	match result.type_:
-		case ResultType.Skip:
+		case UiResultType.Skip:
 			return preset
-		case ResultType.Selection:
-			return result.get_value()
-		case ResultType.Reset:
+		case UiResultType.Selection:
+			return result.value()
+		case UiResultType.Reset:
 			raise ValueError('Language selection not handled')
 
 

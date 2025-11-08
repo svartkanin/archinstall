@@ -9,7 +9,8 @@ from textual.binding import Binding
 from textual.containers import Center, Horizontal, Vertical
 from textual.events import Key
 from textual.screen import Screen
-from textual.widgets import Button, DataTable, Input, LoadingIndicator, Static
+from textual.widgets import Button, DataTable, Input, LoadingIndicator, OptionList, Static
+from textual.widgets.option_list import Option
 
 from archinstall.lib.output import debug
 from archinstall.lib.translationhandler import tr
@@ -48,6 +49,7 @@ class LoadingScreen(BaseScreen[None]):
 	CSS = """
 	LoadingScreen {
 		align: center middle;
+		background: transparent;
 	}
 
 	.dialog {
@@ -77,7 +79,8 @@ class LoadingScreen(BaseScreen[None]):
 		self._header = header
 
 	async def run(self) -> Result[None]:
-		return await tui.show(self)
+		assert TApp.app
+		return await TApp.app.show(self)
 
 	@override
 	def compose(self) -> ComposeResult:
@@ -94,6 +97,109 @@ class LoadingScreen(BaseScreen[None]):
 
 	def action_pop_screen(self) -> None:
 		self.dismiss()  # type: ignore[unused-awaitable]
+
+
+class OptionListScreen(BaseScreen[ValueT]):
+	BINDINGS = [
+		Binding('j', 'cursor_down', 'Down', show=True),
+		Binding('k', 'cursor_up', 'Up', show=True),
+	]
+
+	CSS = """
+	OptionListScreen {
+		align-horizontal: center;
+		align-vertical: middle;
+		background: transparent;
+	}
+
+	.content-container {
+		align: center middle;
+		width: auto;
+		height: auto;
+		max-height: 100%;
+
+		margin-top: 2;
+		margin-bottom: 2;
+		padding: 0;
+
+		background: transparent;
+	}
+
+	.header {
+		text-align: center;
+		overflow-x: hidden;
+		margin-bottom: 0;
+		width: 100%;
+		height: auto;
+	}
+
+	OptionList {
+		width: auto;
+		height: auto;
+		max-height: 1fr;
+
+		padding-top: 0;
+		padding-bottom: 0;
+		padding-left: 1;
+		padding-right: 1;
+
+		scrollbar-size-vertical: 1;
+
+		background: transparent;
+	}
+	"""
+
+	def __init__(
+		self,
+		group: MenuItemGroup,
+		header: str,
+		allow_skip: bool = False,
+		allow_reset: bool = False,
+	):
+		super().__init__(allow_skip, allow_reset)
+		self._group = group
+		self._header = header
+
+	def action_cursor_down(self) -> None:
+		option_list = self.query_one('#option_list_widget', OptionList)
+		option_list.action_cursor_down()
+
+	def action_cursor_up(self) -> None:
+		option_list = self.query_one('#option_list_widget', OptionList)
+		option_list.action_cursor_up()
+
+	async def run(self) -> Result[ValueT]:
+		assert TApp.app
+		return await TApp.app.show(self)
+
+	def _get_options(self) -> list[Option]:
+		options = []
+
+		for item in self._group.items:
+			options.append(Option(item.text, id=item.text))
+
+		return options
+
+	@override
+	def compose(self) -> ComposeResult:
+		options = self._get_options()
+
+		if self._header:
+			yield Static(self._header, classes='header', id='header')
+
+		with Center():
+			with Vertical(classes='content-container'):
+				yield OptionList(*options, id='option_list_widget')
+
+	def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
+		selected_option = event.option
+
+		for item in self._group.items:
+			if item.text == selected_option.id:
+				self.dismiss(Result(ResultType.Selection, item.value))
+				return
+
+		debug(f"Error: Selected option ID '{selected_option.id}' not found in group items")
 
 
 class ConfirmationScreen(BaseScreen[ValueT]):
@@ -164,7 +270,8 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 		self._header = header
 
 	async def run(self) -> Result[ValueT]:
-		return await tui.show(self)
+		assert TApp.app
+		return await TApp.app.show(self)
 
 	@override
 	def compose(self) -> ComposeResult:
@@ -220,6 +327,7 @@ class NotifyScreen(ConfirmationScreen[ValueT]):
 class InputScreen(BaseScreen[str]):
 	CSS = """
 	InputScreen {
+		background: transparent;
 	}
 
 	.dialog-wrapper {
@@ -288,7 +396,8 @@ class InputScreen(BaseScreen[str]):
 		self._allow_skip = allow_skip
 
 	async def run(self) -> Result[str]:
-		return await tui.show(self)
+		assert TApp.app
+		return await TApp.app.show(self)
 
 	@override
 	def compose(self) -> ComposeResult:
@@ -342,10 +451,9 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
 	.content-container {
 		width: auto;
-		min-height: 10;
-		min-width: 40;
 		align: center middle;
 		background: transparent;
+		padding: 2 0;
 	}
 
 	.header {
@@ -378,19 +486,18 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 			raise ValueError('Either data or data_callback must be provided')
 
 	async def run(self) -> Result[ValueT]:
-		return await tui.show(self)
+		assert TApp.app
+		return await TApp.app.show(self)
 
 	def action_cursor_down(self) -> None:
 		table = self.query_one(DataTable)
-		if table.cursor_row is not None:
-			next_row = min(table.cursor_row + 1, len(table.rows) - 1)
-			table.move_cursor(row=next_row, column=table.cursor_column or 0)
+		next_row = min(table.cursor_row + 1, len(table.rows) - 1)
+		table.move_cursor(row=next_row, column=table.cursor_column or 0)
 
 	def action_cursor_up(self) -> None:
 		table = self.query_one(DataTable)
-		if table.cursor_row is not None:
-			prev_row = max(table.cursor_row - 1, 0)
-			table.move_cursor(row=prev_row, column=table.cursor_column or 0)
+		prev_row = max(table.cursor_row - 1, 0)
+		table.move_cursor(row=prev_row, column=table.cursor_column or 0)
 
 	@override
 	def compose(self) -> ComposeResult:
@@ -457,7 +564,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		self.dismiss(Result(ResultType.Selection, data))  # type: ignore[unused-awaitable]
 
 
-class TApp(App[Any]):
+class _AppInstance(App[ValueT]):
 	CSS = """
 	.app-header {
 		dock: top;
@@ -470,8 +577,33 @@ class TApp(App[Any]):
 	}
 	"""
 
-	def __init__(self) -> None:
+	def __init__(self, main: Any) -> None:
 		super().__init__(ansi_color=True)
+		self._main = main
+
+	def on_mount(self) -> None:
+		self._run_worker()
+
+	@work
+	async def _run_worker(self) -> None:
+		try:
+			await self._main.run()  # type: ignore[unreachable]
+		except Exception as err:
+			debug(f'Error while running main app: {err}')
+			raise err from err
+
+	@work
+	async def _show_async(self, screen: Screen[Result[ValueT]]) -> Result[ValueT]:
+		return await self.push_screen_wait(screen)
+
+	async def show(self, screen: Screen[Result[ValueT]]) -> Result[ValueT]:
+		return await self._show_async(screen).wait()
+
+
+class TApp:
+	app: _AppInstance[Any] | None = None
+
+	def __init__(self) -> None:
 		self._main = None
 		self._global_header: str | None = None
 
@@ -483,27 +615,14 @@ class TApp(App[Any]):
 	def global_header(self, value: str | None) -> None:
 		self._global_header = value
 
-	def set_main(self, main: Any) -> None:
-		self._main = main
+	def run(self, main: Any) -> Result[ValueT] | None:
+		TApp.app = _AppInstance(main)
+		return TApp.app.run()
 
-	def on_mount(self) -> None:
-		self._run_worker()
-
-	@work
-	async def _run_worker(self) -> None:
-		try:
-			if self._main is not None:
-				await self._main.run()  # type: ignore[unreachable]
-		except Exception as err:
-			debug(f'Error while running main app: {err}')
-			raise err from err
-
-	@work
-	async def _show_async(self, screen: Screen[Result[ValueT]]) -> Result[ValueT]:
-		return await self.push_screen_wait(screen)
-
-	async def show(self, screen: Screen[Result[ValueT]]) -> Result[ValueT]:
-		return await self._show_async(screen).wait()
+	def exit(self, result: Result[ValueT]) -> None:
+		assert TApp.app
+		TApp.app.exit(result)
+		return
 
 
 tui = TApp()
