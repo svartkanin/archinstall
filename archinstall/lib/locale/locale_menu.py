@@ -31,32 +31,24 @@ class LocaleMenu(AbstractSubMenu[LocaleConfiguration]):
 				text=tr('Keyboard layout'),
 				action=self._select_kb_layout,
 				value=self._locale_conf.kb_layout,
-				preview_action=self._prev_locale,
+				preview_action=lambda item: item.get_value(),
 				key='kb_layout',
 			),
 			MenuItem(
 				text=tr('Locale language'),
 				action=select_locale_lang,
 				value=self._locale_conf.sys_lang,
-				preview_action=self._prev_locale,
+				preview_action=lambda item: item.get_value(),
 				key='sys_lang',
 			),
 			MenuItem(
 				text=tr('Locale encoding'),
 				action=select_locale_enc,
 				value=self._locale_conf.sys_enc,
-				preview_action=self._prev_locale,
+				preview_action=lambda item: item.get_value(),
 				key='sys_enc',
 			),
 		]
-
-	def _prev_locale(self, item: MenuItem) -> str:
-		temp_locale = LocaleConfiguration(
-			self._menu_item_group.find_by_key('kb_layout').get_value(),
-			self._menu_item_group.find_by_key('sys_lang').get_value(),
-			self._menu_item_group.find_by_key('sys_enc').get_value(),
-		)
-		return temp_locale.preview()
 
 	@override
 	def run(
@@ -104,7 +96,7 @@ def select_locale_enc(preset: str | None = None) -> str | None:
 
 	match result.type_:
 		case ResultType.Selection:
-			return result.get_value()
+			return result.value()
 		case ResultType.Skip:
 			return preset
 		case _:
@@ -131,7 +123,7 @@ def select_kb_layout(preset: str | None = None) -> str | None:
 
 	match result.type_:
 		case ResultType.Selection:
-			return result.get_value()
+			return result.value()
 		case ResultType.Skip:
 			return preset
 		case _:

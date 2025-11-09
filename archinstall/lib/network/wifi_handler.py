@@ -29,7 +29,7 @@ class WifiHandler:
 		result = tui.run(self)
 		return result
 
-	async def run(self) -> None:
+	async def _run(self) -> None:
 		"""
 		This is the entry point that is called by components.TApp
 		"""
@@ -58,8 +58,6 @@ class WifiHandler:
 			case ResultType.Skip | ResultType.Reset:
 				tui.exit(False)
 				return None
-			case _:
-				assert_never(result)
 
 		setup_result = await self._setup_wifi(wifi_iface)
 		tui.exit(setup_result)

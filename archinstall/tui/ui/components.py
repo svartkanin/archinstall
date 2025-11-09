@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import Any, TypeVar, override
+from typing import Any, Literal, TypeVar, override
 
 from textual import work
 from textual.app import App, ComposeResult
@@ -9,7 +9,7 @@ from textual.binding import Binding
 from textual.containers import Center, Horizontal, Vertical
 from textual.events import Key
 from textual.screen import Screen
-from textual.widgets import Button, DataTable, Input, LoadingIndicator, OptionList, Static
+from textual.widgets import Button, DataTable, Input, LoadingIndicator, OptionList, Rule, Static
 from textual.widgets.option_list import Option
 
 from archinstall.lib.output import debug
@@ -21,608 +21,660 @@ ValueT = TypeVar('ValueT')
 
 
 class BaseScreen(Screen[Result[ValueT]]):
-	BINDINGS = [  # noqa: RUF012
-		Binding('escape', 'cancel_operation', 'Cancel', show=True),
-		Binding('ctrl+c', 'reset_operation', 'Reset', show=True),
-	]
+    BINDINGS = [  # noqa: RUF012
+        Binding('escape', 'cancel_operation', 'Cancel', show=True),
+        Binding('ctrl+c', 'reset_operation', 'Reset', show=True),
+    ]
 
-	def __init__(self, allow_skip: bool = False, allow_reset: bool = False):
-		super().__init__()
-		self._allow_skip = allow_skip
-		self._allow_reset = allow_reset
+    def __init__(self, allow_skip: bool = False, allow_reset: bool = False):
+        super().__init__()
+        self._allow_skip = allow_skip
+        self._allow_reset = allow_reset
 
-	def action_cancel_operation(self) -> None:
-		if self._allow_skip:
-			self.dismiss(Result(ResultType.Skip, None))  # type: ignore[unused-awaitable]
+    def action_cancel_operation(self) -> None:
+        if self._allow_skip:
+            self.dismiss(Result(ResultType.Skip))  # type: ignore[unused-awaitable]
 
-	def action_reset_operation(self) -> None:
-		if self._allow_reset:
-			self.dismiss(Result(ResultType.Reset, None))  # type: ignore[unused-awaitable]
+    async def action_reset_operation(self) -> None:
+        if self._allow_reset:
+            self.dismiss(Result(ResultType.Reset))  # type: ignore[unused-awaitable]
 
-	def _compose_header(self) -> ComposeResult:
-		"""Compose the app header if global header text is available."""
-		if tui.global_header:
-			yield Static(tui.global_header, classes='app-header')
+    def _compose_header(self) -> ComposeResult:
+        """Compose the app header if global header text is available."""
+        if tui.global_header:
+            yield Static(tui.global_header, classes='app-header')
 
 
 class LoadingScreen(BaseScreen[None]):
-	CSS = """
-	LoadingScreen {
-		align: center middle;
-		background: transparent;
-	}
+    CSS = """
+    LoadingScreen {
+        align: center middle;
+        background: transparent;
+    }
 
-	.dialog {
-		align: center middle;
-		width: 100%;
-		border: none;
-		background: transparent;
-	}
+    .dialog {
+        align: center middle;
+        width: 100%;
+        border: none;
+        background: transparent;
+    }
 
-	.header {
-		text-align: center;
-		margin-bottom: 1;
-	}
+    .header {
+        text-align: center;
+        margin-bottom: 1;
+    }
 
-	LoadingIndicator {
-		align: center middle;
-	}
-	"""
+    LoadingIndicator {
+        align: center middle;
+    }
+    """
 
-	def __init__(
-		self,
-		timer: int,
-		header: str | None = None,
-	):
-		super().__init__()
-		self._timer = timer
-		self._header = header
+    def __init__(
+        self,
+        timer: int,
+        header: str | None = None,
+    ):
+        super().__init__()
+        self._timer = timer
+        self._header = header
 
-	async def run(self) -> Result[None]:
-		assert TApp.app
-		return await TApp.app.show(self)
+    async def run(self) -> Result[None]:
+        assert TApp.app
+        return await TApp.app.show(self)
 
-	@override
-	def compose(self) -> ComposeResult:
-		yield from self._compose_header()
+    @override
+    def compose(self) -> ComposeResult:
+        yield from self._compose_header()
 
-		with Center():
-			with Vertical(classes='dialog'):
-				if self._header:
-					yield Static(self._header, classes='header')
-				yield Center(LoadingIndicator())  # ensures indicator is centered too
+        with Center():
+            with Vertical(classes='dialog'):
+                if self._header:
+                    yield Static(self._header, classes='header')
+                yield Center(LoadingIndicator())  # ensures indicator is centered too
 
-	def on_mount(self) -> None:
-		self.set_timer(self._timer, self.action_pop_screen)
+    def on_mount(self) -> None:
+        self.set_timer(self._timer, self.action_pop_screen)
 
-	def action_pop_screen(self) -> None:
-		self.dismiss()  # type: ignore[unused-awaitable]
+    def action_pop_screen(self) -> None:
+        self.dismiss()  # type: ignore[unused-awaitable]
 
 
 class OptionListScreen(BaseScreen[ValueT]):
-	BINDINGS = [
-		Binding('j', 'cursor_down', 'Down', show=True),
-		Binding('k', 'cursor_up', 'Up', show=True),
-	]
+    BINDINGS = [
+        Binding('j', 'cursor_down', 'Down', show=True),
+        Binding('k', 'cursor_up', 'Up', show=True),
+    ]
 
-	CSS = """
-	OptionListScreen {
-		align-horizontal: center;
-		align-vertical: middle;
-		background: transparent;
-	}
+    CSS = """
+        OptionListScreen {
+            align-horizontal: center;
+            align-vertical: middle;
+            background: transparent;
+        }
 
-	.content-container {
-		align: center middle;
-		width: auto;
-		height: auto;
-		max-height: 100%;
+        .content-container {
+            width: 1fr;
+            height: 1fr;
+            max-height: 100%;
 
-		margin-top: 2;
-		margin-bottom: 2;
-		padding: 0;
+            margin-top: 2;
+            margin-bottom: 2;
+            padding: 0;
 
-		background: transparent;
-	}
+            background: transparent;
+        }
 
-	.header {
-		text-align: center;
-		overflow-x: hidden;
-		margin-bottom: 0;
-		width: 100%;
-		height: auto;
-	}
+        .header {
+            text-align: center;
+            margin-top: 1;
+            margin-bottom: 0;
+            width: 100%;
+            height: auto;
+            background: transparent;
+        }
 
-	OptionList {
-		width: auto;
-		height: auto;
-		max-height: 1fr;
+        .list-container {
+            width: auto;
+            height: auto;
+            max-height: 100%;
 
-		padding-top: 0;
-		padding-bottom: 0;
-		padding-left: 1;
-		padding-right: 1;
+            margin-top: 2;
+            margin-bottom: 2;
+            padding: 0;
 
-		scrollbar-size-vertical: 1;
+            background: transparent;
+        }
 
-		background: transparent;
-	}
-	"""
+        .no-border {
+            border: none;
+        }
 
-	def __init__(
-		self,
-		group: MenuItemGroup,
-		header: str,
-		allow_skip: bool = False,
-		allow_reset: bool = False,
-	):
-		super().__init__(allow_skip, allow_reset)
-		self._group = group
-		self._header = header
+        OptionList {
+            width: auto;
+            height: auto;
+            max-height: 1fr;
 
-	def action_cursor_down(self) -> None:
-		option_list = self.query_one('#option_list_widget', OptionList)
-		option_list.action_cursor_down()
+            padding-top: 0;
+            padding-bottom: 0;
+            padding-left: 1;
+            padding-right: 1;
 
-	def action_cursor_up(self) -> None:
-		option_list = self.query_one('#option_list_widget', OptionList)
-		option_list.action_cursor_up()
+            scrollbar-size-vertical: 1;
 
-	async def run(self) -> Result[ValueT]:
-		assert TApp.app
-		return await TApp.app.show(self)
+            background: transparent;
+        }
+    """
 
-	def _get_options(self) -> list[Option]:
-		options = []
+    def __init__(
+        self,
+        group: MenuItemGroup,
+        header: str | None = None,
+        allow_skip: bool = False,
+        allow_reset: bool = False,
+        preview_location: Literal['right', 'bottom'] | None = None,
+    ):
+        super().__init__(allow_skip, allow_reset)
+        self._group = group
+        self._header = header
+        self._preview_location = preview_location
 
-		for item in self._group.items:
-			options.append(Option(item.text, id=item.text))
+    def action_cursor_down(self) -> None:
+        option_list = self.query_one('#option_list_widget', OptionList)
+        option_list.action_cursor_down()
 
-		return options
+    def action_cursor_up(self) -> None:
+        option_list = self.query_one('#option_list_widget', OptionList)
+        option_list.action_cursor_up()
 
-	@override
-	def compose(self) -> ComposeResult:
-		options = self._get_options()
+    async def run(self) -> Result[ValueT]:
+        assert TApp.app
+        return await TApp.app.show(self)
 
-		if self._header:
-			yield Static(self._header, classes='header', id='header')
+    def _get_options(self) -> list[Option]:
+        options = []
 
-		with Center():
-			with Vertical(classes='content-container'):
-				yield OptionList(*options, id='option_list_widget')
+        for item in self._group.get_enabled_items():
+            disabled = True if item.read_only else False
+            options.append(Option(item.text, id=item.get_id(), disabled=disabled))
 
-	def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
-		selected_option = event.option
+        return options
 
-		for item in self._group.items:
-			if item.text == selected_option.id:
-				self.dismiss(Result(ResultType.Selection, item.value))
-				return
+    @override
+    def compose(self) -> ComposeResult:
+        yield from self._compose_header()
 
-		debug(f"Error: Selected option ID '{selected_option.id}' not found in group items")
+        options = self._get_options()
+
+        with Vertical(classes='content-container'):
+            if self._header:
+                yield Static(self._header, classes='header', id='header')
+
+            if self._preview_location is None:
+                with Center():
+                    with Vertical(classes='list-container'):
+                        yield OptionList(*options, id='option_list_widget')
+            else:
+                Container = Horizontal if self._preview_location == 'right' else Vertical
+                rule_orientation = 'vertical' if self._preview_location == 'right' else 'horizontal'
+
+                with Container():
+                    yield OptionList(*options, id='option_list_widget', classes='no-border')
+                    yield Rule(orientation=rule_orientation)
+                    yield Static('', id='preview_content')
+
+    def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
+        selected_option = event.option
+        item = self._group.find_by_id(selected_option.id)
+        self.dismiss(Result(ResultType.Selection, _item=item))
+
+    def on_option_list_option_highlighted(self, event: OptionList.OptionHighlighted) -> None:
+        if self._preview_location is None:
+            return None
+
+        preview_widget = self.query_one('#preview_content', Static)
+        highlighted_id = event.option.id
+
+        item = self._group.find_by_id(highlighted_id)
+
+        if item.preview_action is not None:
+            maybe_preview = item.preview_action(item)
+            if maybe_preview is not None:
+                preview_widget.update(maybe_preview)
+                return
+
+        preview_widget.update('')
 
 
 class ConfirmationScreen(BaseScreen[ValueT]):
-	BINDINGS = [  # noqa: RUF012
-		Binding('l', 'focus_right', 'Focus right', show=True),
-		Binding('h', 'focus_left', 'Focus left', show=True),
-		Binding('right', 'focus_right', 'Focus right', show=True),
-		Binding('left', 'focus_left', 'Focus left', show=True),
-	]
+    BINDINGS = [  # noqa: RUF012
+        Binding('l', 'focus_right', 'Focus right', show=True),
+        Binding('h', 'focus_left', 'Focus left', show=True),
+        Binding('right', 'focus_right', 'Focus right', show=True),
+        Binding('left', 'focus_left', 'Focus left', show=True),
+    ]
 
-	CSS = """
-	ConfirmationScreen {
-		align: center middle;
-	}
+    CSS = """
+    ConfirmationScreen {
+        align: center middle;
+    }
 
-	.dialog-wrapper {
-		align: center middle;
-		height: 100%;
-		width: 100%;
-	}
+    .dialog-wrapper {
+        align: center middle;
+        height: 100%;
+        width: 100%;
+    }
 
-	.dialog {
-		width: 80;
-		height: 10;
-		border: none;
-		background: transparent;
-	}
+    .dialog {
+        width: 80;
+        height: 10;
+        border: none;
+        background: transparent;
+    }
 
-	.dialog-content {
-		padding: 1;
-		height: 100%;
-	}
+    .dialog-content {
+        padding: 1;
+        height: 100%;
+    }
 
-	.message {
-		text-align: center;
-		margin-bottom: 1;
-	}
+    .message {
+        text-align: center;
+        margin-bottom: 1;
+    }
 
-	.buttons {
-		align: center middle;
-		background: transparent;
-	}
+    .buttons {
+        align: center middle;
+        background: transparent;
+    }
 
-	Button {
-		width: 4;
-		height: 3;
-		background: transparent;
-		margin: 0 1;
-	}
+    Button {
+        width: 4;
+        height: 3;
+        background: transparent;
+        margin: 0 1;
+    }
 
-	Button.-active {
-		background: #1793D1;
-		color: white;
-		border: none;
-		text-style: none;
-	}
-	"""
+    Button.-active {
+        background: #1793D1;
+        color: white;
+        border: none;
+        text-style: none;
+    }
+    """
 
-	def __init__(
-		self,
-		group: MenuItemGroup,
-		header: str,
-		allow_skip: bool = False,
-		allow_reset: bool = False,
-	):
-		super().__init__(allow_skip, allow_reset)
-		self._group = group
-		self._header = header
+    def __init__(
+        self,
+        group: MenuItemGroup,
+        header: str,
+        allow_skip: bool = False,
+        allow_reset: bool = False,
+    ):
+        super().__init__(allow_skip, allow_reset)
+        self._group = group
+        self._header = header
 
-	async def run(self) -> Result[ValueT]:
-		assert TApp.app
-		return await TApp.app.show(self)
+    async def run(self) -> Result[ValueT]:
+        assert TApp.app
+        return await TApp.app.show(self)
 
-	@override
-	def compose(self) -> ComposeResult:
-		yield from self._compose_header()
+    @override
+    def compose(self) -> ComposeResult:
+        yield from self._compose_header()
 
-		with Center(classes='dialog-wrapper'):
-			with Vertical(classes='dialog'):
-				with Vertical(classes='dialog-content'):
-					yield Static(self._header, classes='message')
-					with Horizontal(classes='buttons'):
-						for item in self._group.items:
-							yield Button(item.text, id=item.key)
+        with Center(classes='dialog-wrapper'):
+            with Vertical(classes='dialog'):
+                with Vertical(classes='dialog-content'):
+                    yield Static(self._header, classes='message')
+                    with Horizontal(classes='buttons'):
+                        for item in self._group.items:
+                            yield Button(item.text, id=item.key)
 
-	def on_mount(self) -> None:
-		self.update_selection()
+    def on_mount(self) -> None:
+        self.update_selection()
 
-	def update_selection(self) -> None:
-		focused = self._group.focus_item
-		buttons = self.query(Button)
+    def update_selection(self) -> None:
+        focused = self._group.focus_item
+        buttons = self.query(Button)
 
-		if not focused:
-			return
+        if not focused:
+            return
 
-		for button in buttons:
-			if button.id == focused.key:
-				button.add_class('-active')
-				button.focus()
-			else:
-				button.remove_class('-active')
+        for button in buttons:
+            if button.id == focused.key:
+                button.add_class('-active')
+                button.focus()
+            else:
+                button.remove_class('-active')
 
-	def action_focus_right(self) -> None:
-		self._group.focus_next()
-		self.update_selection()
+    def action_focus_right(self) -> None:
+        self._group.focus_next()
+        self.update_selection()
 
-	def action_focus_left(self) -> None:
-		self._group.focus_prev()
-		self.update_selection()
+    def action_focus_left(self) -> None:
+        self._group.focus_prev()
+        self.update_selection()
 
-	def on_key(self, event: Key) -> None:
-		if event.key == 'enter':
-			item = self._group.focus_item
-			if not item:
-				return None
-			self.dismiss(Result(ResultType.Selection, item.value))  # type: ignore[unused-awaitable]
+    def on_key(self, event: Key) -> None:
+        if event.key == 'enter':
+            item = self._group.focus_item
+            if not item:
+                return None
+            self.dismiss(Result(ResultType.Selection, _item=item))  # type: ignore[unused-awaitable]
 
 
 class NotifyScreen(ConfirmationScreen[ValueT]):
-	def __init__(self, header: str):
-		group = MenuItemGroup([MenuItem(tr('Ok'))])
-		super().__init__(group, header)
+    def __init__(self, header: str):
+        group = MenuItemGroup([MenuItem(tr('Ok'))])
+        super().__init__(group, header)
 
 
 class InputScreen(BaseScreen[str]):
-	CSS = """
-	InputScreen {
-		background: transparent;
-	}
+    CSS = """
+    InputScreen {
+        background: transparent;
+    }
 
-	.dialog-wrapper {
-		align: center middle;
-		height: 100%;
-		width: 100%;
-	}
+    .dialog-wrapper {
+        align: center middle;
+        height: 100%;
+        width: 100%;
+    }
 
-	.input-dialog {
-		width: 60;
-		height: 10;
-		border: none;
-		background: transparent;
-	}
+    .input-dialog {
+        width: 60;
+        height: 10;
+        border: none;
+        background: transparent;
+    }
 
-	.input-content {
-		padding: 1;
-		height: 100%;
-	}
+    .input-content {
+        padding: 1;
+        height: 100%;
+    }
 
-	.input-header {
-		text-align: center;
-		margin: 0 0;
-		color: white;
-		text-style: bold;
-		background: transparent;
-	}
+    .input-header {
+        text-align: center;
+        margin: 0 0;
+        color: white;
+        text-style: bold;
+        background: transparent;
+    }
 
-	.input-prompt {
-		text-align: center;
-		margin: 0 0 1 0;
-		background: transparent;
-	}
+    .input-prompt {
+        text-align: center;
+        margin: 0 0 1 0;
+        background: transparent;
+    }
 
-	Input {
-		margin: 1 2;
-		border: solid $accent;
-		background: transparent;
-		height: 3;
-	}
+    Input {
+        margin: 1 2;
+        border: solid $accent;
+        background: transparent;
+        height: 3;
+    }
 
-	Input .input--cursor {
-		color: white;
-	}
+    Input .input--cursor {
+        color: white;
+    }
 
-	Input:focus {
-		border: solid $primary;
-	}
-	"""
+    Input:focus {
+        border: solid $primary;
+    }
+    """
 
-	def __init__(
-		self,
-		header: str,
-		placeholder: str | None = None,
-		password: bool = False,
-		default_value: str | None = None,
-		allow_reset: bool = False,
-		allow_skip: bool = False,
-	):
-		super().__init__(allow_skip, allow_reset)
-		self._header = header
-		self._placeholder = placeholder or ''
-		self._password = password
-		self._default_value = default_value or ''
-		self._allow_reset = allow_reset
-		self._allow_skip = allow_skip
+    def __init__(
+        self,
+        header: str,
+        placeholder: str | None = None,
+        password: bool = False,
+        default_value: str | None = None,
+        allow_reset: bool = False,
+        allow_skip: bool = False,
+    ):
+        super().__init__(allow_skip, allow_reset)
+        self._header = header
+        self._placeholder = placeholder or ''
+        self._password = password
+        self._default_value = default_value or ''
+        self._allow_reset = allow_reset
+        self._allow_skip = allow_skip
 
-	async def run(self) -> Result[str]:
-		assert TApp.app
-		return await TApp.app.show(self)
+    async def run(self) -> Result[str]:
+        assert TApp.app
+        return await TApp.app.show(self)
 
-	@override
-	def compose(self) -> ComposeResult:
-		yield from self._compose_header()
+    @override
+    def compose(self) -> ComposeResult:
+        yield from self._compose_header()
 
-		with Center(classes='dialog-wrapper'):
-			with Vertical(classes='input-dialog'):
-				with Vertical(classes='input-content'):
-					yield Static(self._header, classes='input-header')
-					yield Input(
-						placeholder=self._placeholder,
-						password=self._password,
-						value=self._default_value,
-						id='main_input',
-					)
+        with Center(classes='dialog-wrapper'):
+            with Vertical(classes='input-dialog'):
+                with Vertical(classes='input-content'):
+                    yield Static(self._header, classes='input-header')
+                    yield Input(
+                        placeholder=self._placeholder,
+                        password=self._password,
+                        value=self._default_value,
+                        id='main_input',
+                    )
 
-	def on_mount(self) -> None:
-		input_field = self.query_one('#main_input', Input)
-		input_field.focus()
+    def on_mount(self) -> None:
+        input_field = self.query_one('#main_input', Input)
+        input_field.focus()
 
-	def on_key(self, event: Key) -> None:
-		if event.key == 'enter':
-			input_field = self.query_one('#main_input', Input)
-			value = input_field.value
-			self.dismiss(Result(ResultType.Selection, value))  # type: ignore[unused-awaitable]
+    def on_key(self, event: Key) -> None:
+        if event.key == 'enter':
+            input_field = self.query_one('#main_input', Input)
+            value = input_field.value
+            self.dismiss(Result(ResultType.Selection, _data=value))  # type: ignore[unused-awaitable]
 
 
 class TableSelectionScreen(BaseScreen[ValueT]):
-	BINDINGS = [  # noqa: RUF012
-		Binding('j', 'cursor_down', 'Down', show=True),
-		Binding('k', 'cursor_up', 'Up', show=True),
-	]
+    BINDINGS = [  # noqa: RUF012
+        Binding('j', 'cursor_down', 'Down', show=True),
+        Binding('k', 'cursor_up', 'Up', show=True),
+    ]
 
-	CSS = """
-	TableSelectionScreen {
-		align: center middle;
-		background: transparent;
-	}
+    CSS = """
+    TableSelectionScreen {
+        align: center middle;
+        background: transparent;
+    }
 
-	DataTable {
-		height: auto;
-		width: auto;
-		border: none;
-		background: transparent;
-	}
+    DataTable {
+        height: auto;
+        width: auto;
+        border: none;
+        background: transparent;
+    }
 
-	DataTable .datatable--header {
-		background: transparent;
-		border: solid;
-	}
+    DataTable .datatable--header {
+        background: transparent;
+        border: solid;
+    }
 
-	.content-container {
-		width: auto;
-		align: center middle;
-		background: transparent;
-		padding: 2 0;
-	}
+    .content-container {
+        width: auto;
+        align: center middle;
+        background: transparent;
+        padding: 2 0;
+    }
 
-	.header {
-		text-align: center;
-		margin-bottom: 1;
-	}
+    .header {
+        text-align: center;
+        margin-bottom: 1;
+    }
 
-	LoadingIndicator {
-		height: auto;
-		background: transparent;
-	}
-	"""
+    LoadingIndicator {
+        height: auto;
+        background: transparent;
+    }
+    """
 
-	def __init__(
-		self,
-		header: str | None = None,
-		data: list[ValueT] | None = None,
-		data_callback: Callable[[], Awaitable[list[ValueT]]] | None = None,
-		allow_reset: bool = False,
-		allow_skip: bool = False,
-		loading_header: str | None = None,
-	):
-		super().__init__(allow_skip, allow_reset)
-		self._header = header
-		self._data = data
-		self._data_callback = data_callback
-		self._loading_header = loading_header
+    def __init__(
+        self,
+        header: str | None = None,
+        data: list[ValueT] | None = None,
+        data_callback: Callable[[], Awaitable[list[ValueT]]] | None = None,
+        allow_reset: bool = False,
+        allow_skip: bool = False,
+        loading_header: str | None = None,
+    ):
+        super().__init__(allow_skip, allow_reset)
+        self._header = header
+        self._data = data
+        self._data_callback = data_callback
+        self._loading_header = loading_header
 
-		if self._data is None and self._data_callback is None:
-			raise ValueError('Either data or data_callback must be provided')
+        if self._data is None and self._data_callback is None:
+            raise ValueError('Either data or data_callback must be provided')
 
-	async def run(self) -> Result[ValueT]:
-		assert TApp.app
-		return await TApp.app.show(self)
+    async def run(self) -> Result[ValueT]:
+        assert TApp.app
+        return await TApp.app.show(self)
 
-	def action_cursor_down(self) -> None:
-		table = self.query_one(DataTable)
-		next_row = min(table.cursor_row + 1, len(table.rows) - 1)
-		table.move_cursor(row=next_row, column=table.cursor_column or 0)
+    def action_cursor_down(self) -> None:
+        table = self.query_one(DataTable)
+        next_row = min(table.cursor_row + 1, len(table.rows) - 1)
+        table.move_cursor(row=next_row, column=table.cursor_column or 0)
 
-	def action_cursor_up(self) -> None:
-		table = self.query_one(DataTable)
-		prev_row = max(table.cursor_row - 1, 0)
-		table.move_cursor(row=prev_row, column=table.cursor_column or 0)
+    def action_cursor_up(self) -> None:
+        table = self.query_one(DataTable)
+        prev_row = max(table.cursor_row - 1, 0)
+        table.move_cursor(row=prev_row, column=table.cursor_column or 0)
 
-	@override
-	def compose(self) -> ComposeResult:
-		yield from self._compose_header()
+    @override
+    def compose(self) -> ComposeResult:
+        yield from self._compose_header()
 
-		with Center():
-			with Vertical(classes='content-container'):
-				if self._header:
-					yield Static(self._header, classes='header', id='header')
+        with Center():
+            with Vertical(classes='content-container'):
+                if self._header:
+                    yield Static(self._header, classes='header', id='header')
 
-				if self._loading_header:
-					yield Static(self._loading_header, classes='header', id='loading-header')
+                if self._loading_header:
+                    yield Static(self._loading_header, classes='header', id='loading-header')
 
-				yield LoadingIndicator(id='loader')
-				yield DataTable(id='data_table')
+                yield LoadingIndicator(id='loader')
+                yield DataTable(id='data_table')
 
-	def on_mount(self) -> None:
-		self._display_header(True)
-		data_table = self.query_one(DataTable)
-		data_table.cell_padding = 2
+    def on_mount(self) -> None:
+        self._display_header(True)
+        data_table = self.query_one(DataTable)
+        data_table.cell_padding = 2
 
-		if self._data:
-			self._put_data_to_table(data_table, self._data)
-		else:
-			self._load_data(data_table)
+        if self._data:
+            self._put_data_to_table(data_table, self._data)
+        else:
+            self._load_data(data_table)
 
-	@work
-	async def _load_data(self, table: DataTable[ValueT]) -> None:
-		assert self._data_callback is not None
-		data = await self._data_callback()
-		self._put_data_to_table(table, data)
+    @work
+    async def _load_data(self, table: DataTable[ValueT]) -> None:
+        assert self._data_callback is not None
+        data = await self._data_callback()
+        self._put_data_to_table(table, data)
 
-	def _display_header(self, is_loading: bool) -> None:
-		try:
-			loading_header = self.query_one('#loading-header', Static)
-			header = self.query_one('#header', Static)
-			loading_header.display = is_loading
-			header.display = not is_loading
-		except Exception:
-			pass
+    def _display_header(self, is_loading: bool) -> None:
+        try:
+            loading_header = self.query_one('#loading-header', Static)
+            header = self.query_one('#header', Static)
+            loading_header.display = is_loading
+            header.display = not is_loading
+        except Exception:
+            pass
 
-	def _put_data_to_table(self, table: DataTable[ValueT], data: list[ValueT]) -> None:
-		if not data:
-			self.dismiss(Result(ResultType.Selection, None))  # type: ignore[unused-awaitable]
-			return
+    def _put_data_to_table(self, table: DataTable[ValueT], data: list[ValueT]) -> None:
+        if not data:
+            self.dismiss(Result(ResultType.Selection))  # type: ignore[unused-awaitable]
+            return
 
-		cols = list(data[0].table_data().keys())  # type: ignore[attr-defined]
-		table.add_columns(*cols)
+        cols = list(data[0].table_data().keys())  # type: ignore[attr-defined]
+        table.add_columns(*cols)
 
-		for d in data:
-			row_values = list(d.table_data().values())  # type: ignore[attr-defined]
-			table.add_row(*row_values, key=d)  # type: ignore[arg-type]
+        for d in data:
+            row_values = list(d.table_data().values())  # type: ignore[attr-defined]
+            table.add_row(*row_values, key=d)  # type: ignore[arg-type]
 
-		table.cursor_type = 'row'
-		table.display = True
+        table.cursor_type = 'row'
+        table.display = True
 
-		loader = self.query_one('#loader')
-		loader.display = False
-		self._display_header(False)
-		table.focus()
+        loader = self.query_one('#loader')
+        loader.display = False
+        self._display_header(False)
+        table.focus()
 
-	def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
-		data: ValueT = event.row_key.value  # type: ignore[assignment]
-		self.dismiss(Result(ResultType.Selection, data))  # type: ignore[unused-awaitable]
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        data: ValueT = event.row_key.value  # type: ignore[assignment]
+        self.dismiss(Result(ResultType.Selection, _data=data))  # type: ignore[unused-awaitable]
 
 
 class _AppInstance(App[ValueT]):
-	CSS = """
-	.app-header {
-		dock: top;
-		height: auto;
-		width: 100%;
-		content-align: center middle;
-		background: $primary;
-		color: white;
-		text-style: bold;
-	}
-	"""
+    CSS = """
+    .app-header {
+        dock: top;
+        height: auto;
+        width: 100%;
+        content-align: center middle;
+        background: #1793D1;
+        color: black;
+        text-style: bold;
+    }
+    """
 
-	def __init__(self, main: Any) -> None:
-		super().__init__(ansi_color=True)
-		self._main = main
+    def __init__(self, main: Any) -> None:
+        super().__init__(ansi_color=True)
+        self._main = main
 
-	def on_mount(self) -> None:
-		self._run_worker()
+    def on_mount(self) -> None:
+        self._run_worker()
 
-	@work
-	async def _run_worker(self) -> None:
-		try:
-			await self._main.run()  # type: ignore[unreachable]
-		except Exception as err:
-			debug(f'Error while running main app: {err}')
-			raise err from err
+    @work
+    async def _run_worker(self) -> None:
+        try:
+            await self._main._run()  # type: ignore[unreachable]
+        except Exception as err:
+            debug(f'Error while running main app: {err}')
+            # this will terminate the textual app and return the exception
+            self.exit(err)
 
-	@work
-	async def _show_async(self, screen: Screen[Result[ValueT]]) -> Result[ValueT]:
-		return await self.push_screen_wait(screen)
+    @work
+    async def _show_async(self, screen: Screen[Result[ValueT]]) -> Result[ValueT]:
+        return await self.push_screen_wait(screen)
 
-	async def show(self, screen: Screen[Result[ValueT]]) -> Result[ValueT]:
-		return await self._show_async(screen).wait()
+    async def show(self, screen: Screen[Result[ValueT]]) -> Result[ValueT]:
+        return await self._show_async(screen).wait()
 
 
 class TApp:
-	app: _AppInstance[Any] | None = None
+    app: _AppInstance[Any] | None = None
 
-	def __init__(self) -> None:
-		self._main = None
-		self._global_header: str | None = None
+    def __init__(self) -> None:
+        self._main = None
+        self._global_header: str | None = None
 
-	@property
-	def global_header(self) -> str | None:
-		return self._global_header
+    @property
+    def global_header(self) -> str | None:
+        return self._global_header
 
-	@global_header.setter
-	def global_header(self, value: str | None) -> None:
-		self._global_header = value
+    @global_header.setter
+    def global_header(self, value: str | None) -> None:
+        self._global_header = value
 
-	def run(self, main: Any) -> Result[ValueT] | None:
-		TApp.app = _AppInstance(main)
-		return TApp.app.run()
+    def run(self, main: Any) -> Result[ValueT]:
+        TApp.app = _AppInstance(main)
+        result = TApp.app.run()
 
-	def exit(self, result: Result[ValueT]) -> None:
-		assert TApp.app
-		TApp.app.exit(result)
-		return
+        if isinstance(result, Exception):
+            raise result
+
+        if result is None:
+            raise ValueError('No result returned')
+
+        return result
+
+    def exit(self, result: Result[ValueT]) -> None:
+        assert TApp.app
+        TApp.app.exit(result)
+        return
 
 
 tui = TApp()
