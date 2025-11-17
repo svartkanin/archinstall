@@ -60,6 +60,7 @@ class GlobalMenu(AbstractMenu[None]):
 			),
 			MenuItem(
 				text=tr('Locales'),
+				value=LocaleConfiguration.default(),
 				action=self._locale_selection,
 				preview_action=self._prev_locale,
 				key='locale_config',

@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 from typing import assert_never
 
-from archinstall.lib.menu.helpers import SingleSelection
+from archinstall.lib.menu.helpers import Input, SelectionMenu
 from archinstall.lib.models.packages import Repository
 from archinstall.lib.packages.packages import list_available_packages
 from archinstall.lib.translationhandler import tr
@@ -58,22 +58,21 @@ def ask_ntp(preset: bool = True) -> bool:
 
 
 def ask_hostname(preset: str | None = None) -> str | None:
-	result = EditMenu(
-		tr('Hostname'),
-		alignment=Alignment.CENTER,
+	result = Input(
+		header=tr('Hostname'),
 		allow_skip=True,
-		default_text=preset,
-	).input()
+		default_value=preset,
+	).show()
 
 	match result.type_:
-		case ResultType.Skip:
+		case UiResultType.Skip:
 			return preset
-		case ResultType.Selection:
-			hostname = result.text()
+		case UiResultType.Selection:
+			hostname = result.value()
 			if len(hostname) < 1:
 				return None
 			return hostname
-		case ResultType.Reset:
+		case UiResultType.Reset:
 			raise ValueError('Unhandled result type')
 
 
@@ -138,7 +137,7 @@ def select_archinstall_language(languages: list[Language], preset: Language) -> 
 	# frame=FrameProperties.min(header=tr('Select language')),
 	# ).run()
 
-	result = SingleSelection[Language](
+	result = SelectionMenu[Language](
 		header=title,
 		group=group,
 		allow_reset=False,

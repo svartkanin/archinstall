@@ -4,7 +4,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import cached_property
-from typing import Any, ClassVar, Self
+from typing import Any, ClassVar, Self, overload
+from typing_extensions import override
 
 from archinstall.lib.translationhandler import tr
 
@@ -35,6 +36,10 @@ class MenuItem:
 			self._id = self.key
 		else:
 			self._id = str(id(self))
+
+	@override
+	def __hash__(self):
+		return hash(self._id)
 
 	def get_id(self) -> str:
 		return self._id
@@ -181,6 +186,21 @@ class MenuItemGroup:
 
 		if values:
 			self.set_focus_by_value(values[0])
+
+	def get_focused_index(self) -> int | None:
+		items = self.get_enabled_items()
+
+		if self.focus_item and items:
+			try:
+				return items.index(self.focus_item)
+			except ValueError:
+				# on large menus (15k+) when filtering very quickly
+				# the index search is too slow while the items are reduced
+				# by the filter and it will blow up as it cannot find the
+				# focus item
+				pass
+
+		return None
 
 	def index_focus(self) -> int | None:
 		if self.focus_item and self.items:

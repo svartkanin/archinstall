@@ -581,6 +581,10 @@ class _DeviceInfo:
 	read_only: bool
 	dirty: bool
 
+	@override
+	def __hash__(self) -> int:
+		return hash(self.path)
+
 	def table_data(self) -> dict[str, str | int | bool]:
 		total_free_space = sum([region.get_length(unit=Unit.MiB) for region in self.free_space_regions])
 		return {
@@ -1062,7 +1066,7 @@ class LvmLayoutType(Enum):
 			case LvmLayoutType.Default:
 				return tr('Default layout')
 			# case LvmLayoutType.Manual:
-			# 	return str(_('Manual configuration'))
+			#	return str(_('Manual configuration'))
 
 		raise ValueError(f'Unknown type: {self}')
 

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+from archinstall.lib.menu.helpers import Confirmation, SelectionMenu
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.curses_menu import SelectMenu
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
-from archinstall.tui.result import ResultType
-from archinstall.tui.types import Alignment, FrameProperties, FrameStyle, Orientation, PreviewStyle
+from archinstall.tui.ui.result import ResultType as UiResultType
 
 from ..args import arch_config_handler
 from ..hardware import GfxDriver, SysInfo
@@ -28,22 +27,21 @@ def select_kernel(preset: list[str] = []) -> list[str]:
 	group.set_focus_by_value(default_kernel)
 	group.set_selected_by_value(preset)
 
-	result = SelectMenu[str](
+	result = SelectionMenu[str](
 		group,
+		header=tr('Select which kernel(s) to install'),
 		allow_skip=True,
 		allow_reset=True,
-		alignment=Alignment.CENTER,
-		frame=FrameProperties.min(tr('Kernel')),
 		multi=True,
-	).run()
+	).show()
 
 	match result.type_:
-		case ResultType.Skip:
+		case UiResultType.Skip:
 			return preset
-		case ResultType.Reset:
+		case UiResultType.Reset:
 			return []
-		case ResultType.Selection:
-			return result.get_values()
+		case UiResultType.Selection:
+			return result.values()
 
 
 def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
@@ -51,7 +49,7 @@ def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
 	options = []
 	hidden_options = []
 	default = None
-	header = None
+	header = tr('Select which bootloader to install')
 
 	if arch_config_handler.args.skip_boot:
 		default = Bootloader.NO_BOOTLOADER
@@ -62,7 +60,7 @@ def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
 		options += [Bootloader.Grub, Bootloader.Limine]
 		if not default:
 			default = Bootloader.Grub
-		header = tr('UEFI is not detected and some options are disabled')
+		header += '\n' + tr('UEFI is not detected and some options are disabled')
 	else:
 		options += [b for b in Bootloader if b not in hidden_options]
 		if not default:
@@ -73,20 +71,18 @@ def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
 	group.set_default_by_value(default)
 	group.set_focus_by_value(preset)
 
-	result = SelectMenu[Bootloader](
+	result = SelectionMenu[Bootloader](
 		group,
 		header=header,
-		alignment=Alignment.CENTER,
-		frame=FrameProperties.min(tr('Bootloader')),
 		allow_skip=True,
-	).run()
+	).show()
 
 	match result.type_:
-		case ResultType.Skip:
+		case UiResultType.Skip:
 			return preset
-		case ResultType.Selection:
-			return result.get_value()
-		case ResultType.Reset:
+		case UiResultType.Selection:
+			return result.value()
+		case UiResultType.Reset:
 			raise ValueError('Unhandled result type')
 
 
@@ -96,21 +92,18 @@ def ask_for_uki(preset: bool = True) -> bool:
 	group = MenuItemGroup.yes_no()
 	group.set_focus_by_value(preset)
 
-	result = SelectMenu[bool](
+	result = Confirmation[bool](
 		group,
 		header=prompt,
-		columns=2,
-		orientation=Orientation.HORIZONTAL,
-		alignment=Alignment.CENTER,
 		allow_skip=True,
-	).run()
+	).show()
 
 	match result.type_:
-		case ResultType.Skip:
+		case UiResultType.Skip:
 			return preset
-		case ResultType.Selection:
+		case UiResultType.Selection:
 			return result.item() == MenuItem.yes()
-		case ResultType.Reset:
+		case UiResultType.Reset:
 			raise ValueError('Unhandled result type')
 
 
@@ -140,23 +133,21 @@ def select_driver(options: list[GfxDriver] = [], preset: GfxDriver | None = None
 	if SysInfo.has_nvidia_graphics():
 		header += tr('For the best compatibility with your Nvidia hardware, you may want to use the Nvidia proprietary driver.\n')
 
-	result = SelectMenu[GfxDriver](
+	result = SelectionMenu[GfxDriver](
 		group,
 		header=header,
 		allow_skip=True,
 		allow_reset=True,
-		preview_size='auto',
-		preview_style=PreviewStyle.BOTTOM,
-		preview_frame=FrameProperties(tr('Info'), h_frame_style=FrameStyle.MIN),
-	).run()
+		preview_orientation='right',
+	).show()
 
 	match result.type_:
-		case ResultType.Skip:
+		case UiResultType.Skip:
 			return preset
-		case ResultType.Reset:
+		case UiResultType.Reset:
 			return None
-		case ResultType.Selection:
-			return result.get_value()
+		case UiResultType.Selection:
+			return result.value()
 
 
 def ask_for_swap(preset: bool = True) -> bool:
@@ -170,19 +161,16 @@ def ask_for_swap(preset: bool = True) -> bool:
 	group = MenuItemGroup.yes_no()
 	group.set_focus_by_value(default_item)
 
-	result = SelectMenu[bool](
+	result = Confirmation[bool](
 		group,
 		header=prompt,
-		columns=2,
-		orientation=Orientation.HORIZONTAL,
-		alignment=Alignment.CENTER,
 		allow_skip=True,
-	).run()
+	).show()
 
 	match result.type_:
-		case ResultType.Skip:
+		case UiResultType.Skip:
 			return preset
-		case ResultType.Selection:
+		case UiResultType.Selection:
 			return result.item() == MenuItem.yes()
-		case ResultType.Reset:
+		case UiResultType.Reset:
 			raise ValueError('Unhandled result type')

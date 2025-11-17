@@ -124,7 +124,9 @@ class DiskEncryptionMenu(AbstractSubMenu[DiskEncryption]):
 
 	@override
 	def run(self, additional_title: str | None = None) -> DiskEncryption | None:
-		super().run(additional_title=additional_title)
+		enc_config = super().run(additional_title=additional_title)
+		if enc_config is None:
+			return None
 
 		enc_type: EncryptionType | None = self._item_group.find_by_key('encryption_type').value
 		enc_password: Password | None = self._item_group.find_by_key('encryption_password').value
@@ -148,7 +150,7 @@ class DiskEncryptionMenu(AbstractSubMenu[DiskEncryption]):
 				encryption_type=enc_type,
 				partitions=enc_partitions,
 				lvm_volumes=enc_lvm_vols,
-				hsm_device=self._enc_config.hsm_device,
+				hsm_device=enc_config.hsm_device,
 				iter_time=iter_time or DEFAULT_ITER_TIME,
 			)
 

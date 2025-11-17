@@ -1,12 +1,11 @@
 import copy
 from typing import cast
 
+from archinstall.lib.menu.helpers import SelectionMenu
 from archinstall.lib.menu.menu_helper import MenuHelper
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.curses_menu import SelectMenu
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
-from archinstall.tui.result import ResultType
-from archinstall.tui.types import Alignment
+from archinstall.tui.ui.result import ResultType
 
 
 class ListManager[ValueT]:
@@ -18,7 +17,7 @@ class ListManager[ValueT]:
 		prompt: str | None = None,
 	):
 		"""
-		:param prompt:  Text which will appear at the header
+		:param prompt:	Text which will appear at the header
 		type param: string
 
 		:param entries: list/dict of option to be shown / manipulated
@@ -70,17 +69,17 @@ class ListManager[ValueT]:
 
 			prompt = None
 
-			result = SelectMenu[ValueT | str](
+			result = SelectionMenu[ValueT | str](
 				group,
 				header=prompt,
 				search_enabled=False,
 				allow_skip=False,
-				alignment=Alignment.CENTER,
-			).run()
+				show_frame=False
+			).show()
 
 			match result.type_:
 				case ResultType.Selection:
-					value = result.get_value()
+					value = result.value()
 				case _:
 					raise ValueError('Unhandled return type')
 
@@ -90,15 +89,15 @@ class ListManager[ValueT]:
 			elif value in self._terminate_actions:
 				break
 			else:  # an entry of the existing selection was chosen
-				selected_entry = result.get_value()
+				selected_entry = result.value()
 				selected_entry = cast(ValueT, selected_entry)
 
 				self._run_actions_on_entry(selected_entry)
 
 		self._last_choice = value
 
-		if result.get_value() == self._cancel_action:
-			return self._original_data  # return the original list
+		if result.value() == self._cancel_action:
+			return self._original_data	# return the original list
 		else:
 			return self._data
 
@@ -110,17 +109,16 @@ class ListManager[ValueT]:
 
 		header = f'{self.selected_action_display(entry)}\n'
 
-		result = SelectMenu[str](
+		result = SelectionMenu[str](
 			group,
 			header=header,
 			search_enabled=False,
 			allow_skip=False,
-			alignment=Alignment.CENTER,
-		).run()
+		).show()
 
 		match result.type_:
 			case ResultType.Selection:
-				value = result.get_value()
+				value = result.value()
 			case _:
 				raise ValueError('Unhandled return type')
 

@@ -3,14 +3,14 @@ from __future__ import annotations
 from types import TracebackType
 from typing import Any, Self
 
-from archinstall.lib.menu.helpers import SingleSelection
+from archinstall.lib.menu.helpers import SelectionMenu
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.curses_menu import SelectMenu, Tui
+from archinstall.tui.curses_menu import Tui
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
-from archinstall.tui.ui.result import ResultType
 from archinstall.tui.types import Chars
+from archinstall.tui.ui.result import ResultType
 
-from ..output import error
+from ..output import debug, error
 
 CONFIG_KEY = '__config__'
 
@@ -95,21 +95,16 @@ class AbstractMenu[ValueT]:
 	def _is_config_valid(self) -> bool:
 		return True
 
-	def run(
-		self,
-		additional_title: str | None = None,
-	) -> ValueT | None:
+	def run(self, additional_title: str | None = None) -> ValueT | None:
 		self._sync_from_config()
 
 		while True:
-			result = SingleSelection[ValueT](
+			result = SelectionMenu[ValueT](
 				group=self._menu_item_group,
 				header=additional_title,
 				allow_skip=False,
 				allow_reset=self._allow_reset,
 				preview_orientation='right',
-				# reset_warning_msg=self._reset_warning,
-				# additional_title=additional_title,
 			).show()
 
 			match result.type_:
@@ -124,10 +119,11 @@ class AbstractMenu[ValueT]:
 						item.value = item.action(item.value)
 				case ResultType.Reset:
 					return None
-				case _: pass
+				case _:
+					pass
 
 		self.sync_all_to_config()
-		return None
+		return self._config
 
 
 class AbstractSubMenu[ValueT](AbstractMenu[ValueT]):

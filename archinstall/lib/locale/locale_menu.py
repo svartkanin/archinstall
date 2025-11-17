@@ -1,6 +1,7 @@
 from typing import override
 
-from archinstall.lib.menu.helpers import SingleSelection
+from archinstall.lib.menu.helpers import SelectionMenu
+from archinstall.lib.output import debug
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
@@ -51,12 +52,13 @@ class LocaleMenu(AbstractSubMenu[LocaleConfiguration]):
 		]
 
 	@override
-	def run(
-		self,
-		additional_title: str | None = None,
-	) -> LocaleConfiguration:
-		super().run(additional_title=additional_title)
-		return self._locale_conf
+	def run(self, additional_title: str | None = None) -> LocaleConfiguration:
+		config = super().run(additional_title=additional_title)
+
+		if config is None:
+			config = LocaleConfiguration.default()
+
+		return config
 
 	def _select_kb_layout(self, preset: str | None) -> str | None:
 		kb_lang = select_kb_layout(preset)
@@ -73,7 +75,7 @@ def select_locale_lang(preset: str | None = None) -> str | None:
 	group = MenuItemGroup(items, sort_items=True)
 	group.set_focus_by_value(preset)
 
-	result = SingleSelection[str](header=tr('Locale language'), group=group).show()
+	result = SelectionMenu[str](header=tr('Locale language'), group=group).show()
 
 	match result.type_:
 		case ResultType.Selection:
@@ -92,7 +94,7 @@ def select_locale_enc(preset: str | None = None) -> str | None:
 	group = MenuItemGroup(items, sort_items=True)
 	group.set_focus_by_value(preset)
 
-	result = SingleSelection[str](header=tr('Locale encoding'), group=group).show()
+	result = SelectionMenu[str](header=tr('Locale encoding'), group=group).show()
 
 	match result.type_:
 		case ResultType.Selection:
@@ -119,7 +121,7 @@ def select_kb_layout(preset: str | None = None) -> str | None:
 	group = MenuItemGroup(items, sort_items=False)
 	group.set_focus_by_value(preset)
 
-	result = SingleSelection[str](header=tr('Keyboard layout'), group=group).show()
+	result = SelectionMenu[str](header=tr('Keyboard layout'), group=group).show()
 
 	match result.type_:
 		case ResultType.Selection:

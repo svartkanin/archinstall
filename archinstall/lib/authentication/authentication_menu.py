@@ -31,9 +31,8 @@ class AuthenticationMenu(AbstractSubMenu[AuthenticationConfiguration]):
 		)
 
 	@override
-	def run(self, additional_title: str | None = None) -> AuthenticationConfiguration:
-		super().run(additional_title=additional_title)
-		return self._auth_config
+	def run(self, additional_title: str | None = None) -> AuthenticationConfiguration | None:
+		return super().run(additional_title=additional_title)
 
 	def _define_menu_options(self) -> list[MenuItem]:
 		return [
