@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import override
 
+from archinstall.lib.menu.helpers import Input, SelectionMenu
 from archinstall.lib.menu.menu_helper import MenuHelper
 from archinstall.lib.models.device import (
 	DeviceModification,
@@ -11,10 +12,8 @@ from archinstall.lib.models.device import (
 	PartitionModification,
 )
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.curses_menu import EditMenu, SelectMenu
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
-from archinstall.tui.result import ResultType
-from archinstall.tui.types import Alignment, FrameProperties
+from archinstall.tui.ui.result import ResultType
 
 from ..menu.abstract_menu import AbstractSubMenu
 from ..models.device import DEFAULT_ITER_TIME, Fido2Device
@@ -52,7 +51,7 @@ class DiskEncryptionMenu(AbstractSubMenu[DiskEncryption]):
 		return [
 			MenuItem(
 				text=tr('Encryption type'),
-				action=lambda x: select_encryption_type(self._device_modifications, self._lvm_config, x),
+				action=lambda x: select_encryption_type(self._lvm_config, x),
 				value=self._enc_config.encryption_type,
 				preview_action=self._preview,
 				key='encryption_type',
@@ -240,7 +239,6 @@ class DiskEncryptionMenu(AbstractSubMenu[DiskEncryption]):
 
 
 def select_encryption_type(
-	device_modifications: list[DeviceModification],
 	lvm_config: LvmConfiguration | None = None,
 	preset: EncryptionType | None = None,
 ) -> EncryptionType | None:
@@ -260,13 +258,7 @@ def select_encryption_type(
 	group = MenuItemGroup(items)
 	group.set_focus_by_value(preset_value)
 
-	result = SelectMenu[EncryptionType](
-		group,
-		allow_skip=True,
-		allow_reset=True,
-		alignment=Alignment.CENTER,
-		frame=FrameProperties.min(tr('Encryption type')),
-	).run()
+	result = SelectionMenu[EncryptionType](group, header=tr('Select encryption type'), allow_skip=True, allow_reset=True, show_frame=False).show()
 
 	match result.type_:
 		case ResultType.Reset:
@@ -280,7 +272,6 @@ def select_encryption_type(
 def select_encrypted_password() -> Password | None:
 	header = tr('Enter disk encryption password (leave blank for no encryption)') + '\n'
 	password = get_password(
-		text=tr('Disk encryption password'),
 		header=header,
 		allow_skip=True,
 	)
@@ -299,12 +290,7 @@ def select_hsm(preset: Fido2Device | None = None) -> Fido2Device | None:
 	if fido_devices:
 		group = MenuHelper(data=fido_devices).create_menu_group()
 
-		result = SelectMenu[Fido2Device](
-			group,
-			header=header,
-			alignment=Alignment.CENTER,
-			allow_skip=True,
-		).run()
+		result = SelectionMenu[Fido2Device](group, header=header, allow_skip=True, show_frame=False).show()
 
 		match result.type_:
 			case ResultType.Reset:
@@ -334,12 +320,12 @@ def select_partitions_to_encrypt(
 		group = MenuHelper(data=avail_partitions).create_menu_group()
 		group.set_selected_by_value(preset)
 
-		result = SelectMenu[PartitionModification](
+		result = SelectionMenu[PartitionModification](
 			group,
-			alignment=Alignment.CENTER,
+			header=tr('Select partitions to encrypt'),
 			multi=True,
 			allow_skip=True,
-		).run()
+		).show()
 
 		match result.type_:
 			case ResultType.Reset:
@@ -362,11 +348,11 @@ def select_lvm_vols_to_encrypt(
 	if volumes:
 		group = MenuHelper(data=volumes).create_menu_group()
 
-		result = SelectMenu[LvmVolume](
+		result = SelectionMenu[LvmVolume](
 			group,
-			alignment=Alignment.CENTER,
+			header=tr('Select LVM volumes to encrypt'),
 			multi=True,
-		).run()
+		).show()
 
 		match result.type_:
 			case ResultType.Reset:
@@ -385,10 +371,7 @@ def select_iteration_time(preset: int | None = None) -> int | None:
 	header += tr('Higher values increase security but slow down boot time') + '\n'
 	header += tr(f'Default: {DEFAULT_ITER_TIME}ms, Recommended range: 1000-60000') + '\n'
 
-	def validate_iter_time(value: str | None) -> str | None:
-		if not value:
-			return None
-
+	def validate_iter_time(value: str) -> str | None:
 		try:
 			iter_time = int(value)
 			if iter_time < 100:
@@ -399,21 +382,19 @@ def select_iteration_time(preset: int | None = None) -> int | None:
 		except ValueError:
 			return tr('Please enter a valid number')
 
-	result = EditMenu(
-		tr('Iteration time'),
+	result = Input(
 		header=header,
-		alignment=Alignment.CENTER,
 		allow_skip=True,
-		default_text=str(preset) if preset else str(DEFAULT_ITER_TIME),
-		validator=validate_iter_time,
-	).input()
+		default_value=str(preset) if preset else str(DEFAULT_ITER_TIME),
+		validator_callback=validate_iter_time,
+	).show()
 
 	match result.type_:
 		case ResultType.Skip:
 			return preset
 		case ResultType.Selection:
-			if not result.text():
+			if not result.get_value():
 				return preset
-			return int(result.text())
+			return int(result.get_value())
 		case ResultType.Reset:
 			return None

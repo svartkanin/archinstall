@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from archinstall.lib.menu.helpers import Input
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.curses_menu import EditMenu
 from archinstall.tui.result import ResultType
@@ -10,7 +11,6 @@ from ..output import FormattedOutput
 
 
 def get_password(
-	text: str,
 	header: str | None = None,
 	allow_skip: bool = False,
 	preset: str | None = None,
@@ -25,20 +25,18 @@ def get_password(
 		elif header is not None:
 			user_hdr = header
 
-		result = EditMenu(
-			text,
+		result = Input(
 			header=user_hdr,
-			alignment=Alignment.CENTER,
 			allow_skip=allow_skip,
-			default_text=preset,
-			hide_input=True,
-		).input()
+			default_value=preset,
+			password=True,
+		).show()
 
 		if allow_skip:
-			if not result.has_item() or not result.text():
+			if not result.get_value():
 				return None
 
-		password = Password(plaintext=result.text())
+		password = Password(plaintext=result.get_value())
 
 		if skip_confirmation:
 			return password
@@ -48,15 +46,15 @@ def get_password(
 		else:
 			confirmation_header = f'{tr("Password")}: {password.hidden()}\n'
 
-		result = EditMenu(
-			tr('Confirm password'),
-			header=confirmation_header,
-			alignment=Alignment.CENTER,
-			allow_skip=False,
-			hide_input=True,
-		).input()
+		confirmation_header += '\n' + tr('Confirm password')
 
-		if password._plaintext == result.text():
+		result = Input(
+			header=confirmation_header,
+			allow_skip=False,
+			password=True,
+		).show()
+
+		if password._plaintext == result.get_value():
 			return password
 
 		failure = tr('The confirmation password did not match, please try again')

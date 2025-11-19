@@ -95,7 +95,7 @@ class DiskLayoutConfigurationMenu(AbstractSubMenu[DiskLayoutConfiguration]):
 
 	@override
 	def run(self, additional_title: str | None = None) -> DiskLayoutConfiguration | None:
-		config: DiskMenuConfig | None = super().run(additional_title=additional_title)	# pyright: ignore[reportAssignmentType]
+		config: DiskMenuConfig | None = super().run(additional_title=additional_title)  # pyright: ignore[reportAssignmentType]
 		if config is None:
 			return None
 
@@ -182,7 +182,7 @@ class DiskLayoutConfigurationMenu(AbstractSubMenu[DiskLayoutConfiguration]):
 			case ResultType.Reset:
 				return None
 			case ResultType.Selection:
-				return SnapshotConfig(snapshot_type=result.value())
+				return SnapshotConfig(snapshot_type=result.get_value())
 
 	def _prev_disk_layouts(self, item: MenuItem) -> str | None:
 		if not item.value:

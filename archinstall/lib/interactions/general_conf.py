@@ -68,7 +68,7 @@ def ask_hostname(preset: str | None = None) -> str | None:
 		case UiResultType.Skip:
 			return preset
 		case UiResultType.Selection:
-			hostname = result.value()
+			hostname = result.get_value()
 			if len(hostname) < 1:
 				return None
 			return hostname
@@ -148,7 +148,7 @@ def select_archinstall_language(languages: list[Language], preset: Language) -> 
 		case UiResultType.Skip:
 			return preset
 		case UiResultType.Selection:
-			return result.value()
+			return result.get_value()
 		case UiResultType.Reset:
 			raise ValueError('Language selection not handled')
 

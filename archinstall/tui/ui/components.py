@@ -3,16 +3,16 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import Any, Literal, TypeVar, override
 
-from textual import on, work
+from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Center, Horizontal, Vertical
-from textual.css.query import NoMatches
-from textual.events import Key, Mount
+from textual.events import Key
 from textual.screen import Screen
-from textual.widgets.selection_list import Selection
+from textual.validation import Validator
 from textual.widgets import Button, DataTable, Footer, Input, LoadingIndicator, OptionList, Rule, SelectionList, Static
 from textual.widgets.option_list import Option
+from textual.widgets.selection_list import Selection
 from textual.worker import WorkerCancelled
 
 from archinstall.lib.output import debug
@@ -40,7 +40,7 @@ class BaseScreen(Screen[Result[ValueT]]):
 
 	async def action_reset_operation(self) -> None:
 		if self._allow_reset:
-			self.dismiss(Result(ResultType.Reset))	# type: ignore[unused-awaitable]
+			self.dismiss(Result(ResultType.Reset))  # type: ignore[unused-awaitable]
 
 	def _compose_header(self) -> ComposeResult:
 		"""Compose the app header if global header text is available"""
@@ -101,7 +101,7 @@ class LoadingScreen(BaseScreen[None]):
 		self.set_timer(self._timer, self.action_pop_screen)
 
 	def action_pop_screen(self) -> None:
-		self.dismiss()	# type: ignore[unused-awaitable]
+		self.dismiss()  # type: ignore[unused-awaitable]
 
 
 class OptionListScreen(BaseScreen[ValueT]):
@@ -178,7 +178,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 		allow_skip: bool = False,
 		allow_reset: bool = False,
 		preview_location: Literal['right', 'bottom'] | None = None,
-		show_frame: bool = True
+		show_frame: bool = True,
 	):
 		super().__init__(allow_skip, allow_reset)
 		self._group = group
@@ -399,10 +399,7 @@ class SelectListScreen(BaseScreen[ValueT]):
 		item = self._group.find_by_id(selected_option.id)
 		self.dismiss(Result(ResultType.Selection, _item=item))
 
-	def on_selection_list_selection_highlighted(
-		self,
-		event: SelectionList.SelectionHighlighted[ValueT]
-	) -> None:
+	def on_selection_list_selection_highlighted(self, event: SelectionList.SelectionHighlighted[ValueT]) -> None:
 		if self._preview_location is None:
 			return None
 
@@ -536,7 +533,7 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 			item = self._group.focus_item
 			if not item:
 				return None
-			self.dismiss(Result(ResultType.Selection, _item=item))	# type: ignore[unused-awaitable]
+			self.dismiss(Result(ResultType.Selection, _item=item))  # type: ignore[unused-awaitable]
 
 
 class NotifyScreen(ConfirmationScreen[ValueT]):
@@ -551,22 +548,11 @@ class InputScreen(BaseScreen[str]):
 		background: transparent;
 	}
 
-	.dialog-wrapper {
-		align: center middle;
-		height: 100%;
+	.content-container {
 		width: 100%;
-	}
-
-	.input-dialog {
-		width: 60;
-		height: 10;
-		border: none;
+		height: 1fr;
 		background: transparent;
-	}
-
-	.input-content {
-		padding: 1;
-		height: 100%;
+		padding: 2 0;
 	}
 
 	.input-header {
@@ -577,13 +563,17 @@ class InputScreen(BaseScreen[str]):
 		background: transparent;
 	}
 
-	.input-prompt {
+	.input-dialog {
+		align: center top;
 		text-align: center;
-		margin: 0 0 1 0;
+		width: 50%;
+		height: 100%;
 		background: transparent;
 	}
 
 	Input {
+		align: center top;
+		text-align: center;
 		margin: 1 2;
 		border: solid $accent;
 		background: transparent;
@@ -597,6 +587,16 @@ class InputScreen(BaseScreen[str]):
 	Input:focus {
 		border: solid $primary;
 	}
+
+	.input-failure {
+		height: 3;
+		width: 100%;
+		text-align: center;
+		text-style: bold;
+		margin: 0 0;
+		color: red;
+		background: transparent;
+	}
 	"""
 
 	def __init__(
@@ -607,6 +607,7 @@ class InputScreen(BaseScreen[str]):
 		default_value: str | None = None,
 		allow_reset: bool = False,
 		allow_skip: bool = False,
+		validator: Validator | None = None,
 	):
 		super().__init__(allow_skip, allow_reset)
 		self._header = header or ''
@@ -615,6 +616,7 @@ class InputScreen(BaseScreen[str]):
 		self._default_value = default_value or ''
 		self._allow_reset = allow_reset
 		self._allow_skip = allow_skip
+		self._validator = validator
 
 	async def run(self) -> Result[str]:
 		assert TApp.app
@@ -624,16 +626,18 @@ class InputScreen(BaseScreen[str]):
 	def compose(self) -> ComposeResult:
 		yield from self._compose_header()
 
-		with Center(classes='dialog-wrapper'):
-			with Vertical(classes='input-dialog'):
-				with Vertical(classes='input-content'):
-					yield Static(self._header, classes='input-header')
-					yield Input(
-						placeholder=self._placeholder,
-						password=self._password,
-						value=self._default_value,
-						id='main_input',
-					)
+		with Vertical(classes='content-container'):
+			yield Static(self._header, classes='input-header')
+			with Center(classes='input-dialog'):
+				yield Input(
+					placeholder=self._placeholder,
+					password=self._password,
+					value=self._default_value,
+					id='main_input',
+					validators=self._validator,
+					validate_on=['submitted'],
+				)
+				yield Static('', classes='input-failure', id='input-failure')
 
 		yield Footer()
 
@@ -641,11 +645,14 @@ class InputScreen(BaseScreen[str]):
 		input_field = self.query_one('#main_input', Input)
 		input_field.focus()
 
-	def on_key(self, event: Key) -> None:
-		if event.key == 'enter':
-			input_field = self.query_one('#main_input', Input)
-			value = input_field.value
-			self.dismiss(Result(ResultType.Selection, _data=value))  # type: ignore[unused-awaitable]
+	def on_input_submitted(self, event: Input.Submitted) -> None:
+		if event.validation_result and not event.validation_result.is_valid:
+			failures = [failure.description for failure in event.validation_result.failures if failure.description]
+			failure_out = ', '.join(failures)
+
+			self.query_one('#input-failure', Static).update(failure_out)
+		else:
+			self.dismiss(Result(ResultType.Selection, _data=event.value))
 
 
 class TableSelectionScreen(BaseScreen[ValueT]):
@@ -656,38 +663,38 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 	]
 
 	CSS = """
-	TableSelectionScreen {
-		align: center middle;
-		background: transparent;
-	}
+		TableSelectionScreen {
+			align: center middle;
+			background: transparent;
+		}
 
-	DataTable {
-		height: auto;
-		width: auto;
-		border: none;
-		background: transparent;
-	}
+		DataTable {
+			height: auto;
+			width: auto;
+			border: none;
+			background: transparent;
+		}
 
-	DataTable .datatable--header {
-		background: transparent;
-		border: solid;
-	}
+		DataTable .datatable--header {
+			background: transparent;
+			border: solid;
+		}
 
-	.content-container {
-		width: auto;
-		background: transparent;
-		padding: 2 0;
-	}
+		.content-container {
+			width: auto;
+			background: transparent;
+			padding: 2 0;
+		}
 
-	.header {
-		text-align: center;
-		margin-bottom: 1;
-	}
+		.header {
+			text-align: center;
+			margin-bottom: 1;
+		}
 
-	LoadingIndicator {
-		height: auto;
-		background: transparent;
-	}
+		LoadingIndicator {
+			height: auto;
+			background: transparent;
+		}
 	"""
 
 	def __init__(
@@ -698,12 +705,17 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		allow_reset: bool = False,
 		allow_skip: bool = False,
 		loading_header: str | None = None,
+		multi: bool = False,
 	):
 		super().__init__(allow_skip, allow_reset)
 		self._header = header
 		self._data = data
 		self._data_callback = data_callback
 		self._loading_header = loading_header
+		self._multi = multi
+
+		self._selected_keys: set[int] = set()
+		self._current_row_key = None
 
 		if self._data is None and self._data_callback is None:
 			raise ValueError('Either data or data_callback must be provided')
@@ -766,14 +778,22 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
 	def _put_data_to_table(self, table: DataTable[ValueT], data: list[ValueT]) -> None:
 		if not data:
-			self.dismiss(Result(ResultType.Selection))	# type: ignore[unused-awaitable]
+			self.dismiss(Result(ResultType.Selection))  # type: ignore[unused-awaitable]
 			return
 
 		cols = list(data[0].table_data().keys())  # type: ignore[attr-defined]
+
+		if self._multi:
+			cols.insert(0, ' ')
+
 		table.add_columns(*cols)
 
 		for d in data:
-			row_values = list(d.table_data().values())	# type: ignore[attr-defined]
+			row_values = list(d.table_data().values())  # type: ignore[attr-defined]
+
+			if self._multi:
+				row_values.insert(0, ' ')
+
 			table.add_row(*row_values, key=d)  # type: ignore[arg-type]
 
 		table.cursor_type = 'row'
@@ -784,9 +804,35 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		self._display_header(False)
 		table.focus()
 
+	def action_toggle_selection(self) -> None:
+		if not self._multi:
+			return
+
+		if not self._current_row_key:
+			return
+
+		table = self.query_one(DataTable)
+		cell_key = table.coordinate_to_cell_key(table.cursor_coordinate)
+
+		if self._current_row_key in self._selected_keys:
+			self._selected_keys.remove(self._current_row_key)
+			table.update_cell(self._current_row_key, cell_key.column_key, ' ')
+		else:
+			self._selected_keys.add(self._current_row_key)
+			table.update_cell(self._current_row_key, cell_key.column_key, 'X')
+
+	def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+		self._current_row_key = event.row_key
+
 	def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
-		data: ValueT = event.row_key.value	# type: ignore[assignment]
-		self.dismiss(Result(ResultType.Selection, _data=data))	# type: ignore[unused-awaitable]
+		if self._multi:
+			if len(self._selected_keys) == 0:
+				self.dismiss(Result(ResultType.Selection, _data=[event.row_key.value]))
+			else:
+				data = [row_key.value for row_key in self._selected_keys]  # type: ignore[unused-awaitable]
+				self.dismiss(Result(ResultType.Selection, _data=data))
+		else:
+			self.dismiss(Result(ResultType.Selection, _data=event.row_key.value))
 
 
 class _AppInstance(App[ValueT]):
@@ -835,8 +881,8 @@ class _AppInstance(App[ValueT]):
 	def action_trigger_help(self) -> None:
 		from textual.widgets import HelpPanel
 
-		if self.screen.query("HelpPanel"):
-			self.screen.query("HelpPanel").remove()
+		if self.screen.query('HelpPanel'):
+			self.screen.query('HelpPanel').remove()
 		else:
 			self.screen.mount(HelpPanel())
 
@@ -848,8 +894,7 @@ class _AppInstance(App[ValueT]):
 		try:
 			await self._main._run()  # type: ignore[unreachable]
 		except WorkerCancelled:
-			debug(f'Worker was cancelled')
-			pass
+			debug('Worker was cancelled')
 		except Exception as err:
 			debug(f'Error while running main app: {err}')
 			# this will terminate the textual app and return the exception
@@ -897,4 +942,3 @@ class TApp:
 
 
 tui = TApp()
-

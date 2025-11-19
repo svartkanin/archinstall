@@ -41,7 +41,7 @@ def select_kernel(preset: list[str] = []) -> list[str]:
 		case UiResultType.Reset:
 			return []
 		case UiResultType.Selection:
-			return result.values()
+			return result.get_values()
 
 
 def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
@@ -81,7 +81,7 @@ def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
 		case UiResultType.Skip:
 			return preset
 		case UiResultType.Selection:
-			return result.value()
+			return result.get_value()
 		case UiResultType.Reset:
 			raise ValueError('Unhandled result type')
 
@@ -147,7 +147,7 @@ def select_driver(options: list[GfxDriver] = [], preset: GfxDriver | None = None
 		case UiResultType.Reset:
 			return None
 		case UiResultType.Selection:
-			return result.value()
+			return result.get_value()
 
 
 def ask_for_swap(preset: bool = True) -> bool:

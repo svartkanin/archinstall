@@ -31,16 +31,16 @@ class Result[ValueT]:
 
 		raise ValueError('Invalid item type')
 
-	def value(self) -> ValueT:
+	def get_value(self) -> ValueT:
 		if self._item is not None:
-			return self.item().get_value()	# type: ignore[no-any-return]
+			return self.item().get_value()  # type: ignore[no-any-return]
 
 		if type(self._data) is not list and self._data is not None:
 			return cast(ValueT, self._data)
 
 		raise ValueError('No value found')
 
-	def values(self) -> list[ValueT]:
+	def get_values(self) -> list[ValueT]:
 		if self._item is not None:
 			return [i.get_value() for i in self.items()]
 

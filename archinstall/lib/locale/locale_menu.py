@@ -1,7 +1,6 @@
 from typing import override
 
 from archinstall.lib.menu.helpers import SelectionMenu
-from archinstall.lib.output import debug
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
@@ -79,7 +78,7 @@ def select_locale_lang(preset: str | None = None) -> str | None:
 
 	match result.type_:
 		case ResultType.Selection:
-			return result.value()
+			return result.get_value()
 		case ResultType.Skip:
 			return preset
 		case _:
@@ -98,7 +97,7 @@ def select_locale_enc(preset: str | None = None) -> str | None:
 
 	match result.type_:
 		case ResultType.Selection:
-			return result.value()
+			return result.get_value()
 		case ResultType.Skip:
 			return preset
 		case _:
@@ -125,7 +124,7 @@ def select_kb_layout(preset: str | None = None) -> str | None:
 
 	match result.type_:
 		case ResultType.Selection:
-			return result.value()
+			return result.get_value()
 		case ResultType.Skip:
 			return preset
 		case _:

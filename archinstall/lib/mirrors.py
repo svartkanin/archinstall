@@ -51,17 +51,17 @@ class CustomMirrorRepositoriesList(ListManager[CustomRepository]):
 		entry: CustomRepository | None,
 		data: list[CustomRepository],
 	) -> list[CustomRepository]:
-		if action == self._actions[0]:	# add
+		if action == self._actions[0]:  # add
 			new_repo = self._add_custom_repository()
 			if new_repo is not None:
 				data = [d for d in data if d.name != new_repo.name]
 				data += [new_repo]
-		elif action == self._actions[1] and entry:	# modify repo
+		elif action == self._actions[1] and entry:  # modify repo
 			new_repo = self._add_custom_repository(entry)
 			if new_repo is not None:
 				data = [d for d in data if d.name != entry.name]
 				data += [new_repo]
-		elif action == self._actions[2] and entry:	# delete
+		elif action == self._actions[2] and entry:  # delete
 			data = [d for d in data if d != entry]
 
 		return data
@@ -76,7 +76,7 @@ class CustomMirrorRepositoriesList(ListManager[CustomRepository]):
 
 		match edit_result.type_:
 			case ResultType.Selection:
-				name = edit_result.value()
+				name = edit_result.get_value()
 			case ResultType.Skip:
 				return preset
 			case _:
@@ -94,7 +94,7 @@ class CustomMirrorRepositoriesList(ListManager[CustomRepository]):
 
 		match edit_result.type_:
 			case ResultType.Selection:
-				url = edit_result.value()
+				url = edit_result.get_value()
 			case ResultType.Skip:
 				return preset
 			case _:
@@ -117,7 +117,7 @@ class CustomMirrorRepositoriesList(ListManager[CustomRepository]):
 
 		match result.type_:
 			case ResultType.Selection:
-				sign_check = SignCheck(result.value())
+				sign_check = SignCheck(result.get_value())
 			case _:
 				raise ValueError('Unhandled return type')
 
@@ -138,7 +138,7 @@ class CustomMirrorRepositoriesList(ListManager[CustomRepository]):
 
 		match result.type_:
 			case ResultType.Selection:
-				sign_opt = SignOption(result.value())
+				sign_opt = SignOption(result.get_value())
 			case _:
 				raise ValueError('Unhandled return type')
 
@@ -171,17 +171,17 @@ class CustomMirrorServersList(ListManager[CustomServer]):
 		entry: CustomServer | None,
 		data: list[CustomServer],
 	) -> list[CustomServer]:
-		if action == self._actions[0]:	# add
+		if action == self._actions[0]:  # add
 			new_server = self._add_custom_server()
 			if new_server is not None:
 				data = [d for d in data if d.url != new_server.url]
 				data += [new_server]
-		elif action == self._actions[1] and entry:	# modify repo
+		elif action == self._actions[1] and entry:  # modify repo
 			new_server = self._add_custom_server(entry)
 			if new_server is not None:
 				data = [d for d in data if d.url != entry.url]
 				data += [new_server]
-		elif action == self._actions[2] and entry:	# delete
+		elif action == self._actions[2] and entry:  # delete
 			data = [d for d in data if d != entry]
 
 		return data
@@ -196,7 +196,7 @@ class CustomMirrorServersList(ListManager[CustomServer]):
 
 		match edit_result.type_:
 			case ResultType.Selection:
-				uri = edit_result.value()
+				uri = edit_result.get_value()
 				return CustomServer(uri)
 			case ResultType.Skip:
 				return preset
@@ -327,7 +327,7 @@ def select_mirror_regions(preset: list[MirrorRegion]) -> list[MirrorRegion]:
 		case ResultType.Reset:
 			return []
 		case ResultType.Selection:
-			selected_mirrors = result.values()
+			selected_mirrors = result.get_values()
 			return selected_mirrors
 
 
@@ -368,7 +368,7 @@ def select_optional_repositories(preset: list[Repository]) -> list[Repository]:
 		case ResultType.Reset:
 			return []
 		case ResultType.Selection:
-			return result.values()
+			return result.get_values()
 
 
 class MirrorListHandler:

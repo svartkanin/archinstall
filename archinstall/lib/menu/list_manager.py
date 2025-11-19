@@ -69,17 +69,11 @@ class ListManager[ValueT]:
 
 			prompt = None
 
-			result = SelectionMenu[ValueT | str](
-				group,
-				header=prompt,
-				search_enabled=False,
-				allow_skip=False,
-				show_frame=False
-			).show()
+			result = SelectionMenu[ValueT | str](group, header=prompt, search_enabled=False, allow_skip=False, show_frame=False).show()
 
 			match result.type_:
 				case ResultType.Selection:
-					value = result.value()
+					value = result.get_value()
 				case _:
 					raise ValueError('Unhandled return type')
 
@@ -89,15 +83,15 @@ class ListManager[ValueT]:
 			elif value in self._terminate_actions:
 				break
 			else:  # an entry of the existing selection was chosen
-				selected_entry = result.value()
+				selected_entry = result.get_value()
 				selected_entry = cast(ValueT, selected_entry)
 
 				self._run_actions_on_entry(selected_entry)
 
 		self._last_choice = value
 
-		if result.value() == self._cancel_action:
-			return self._original_data	# return the original list
+		if result.get_value() == self._cancel_action:
+			return self._original_data  # return the original list
 		else:
 			return self._data
 
@@ -118,7 +112,7 @@ class ListManager[ValueT]:
 
 		match result.type_:
 			case ResultType.Selection:
-				value = result.value()
+				value = result.get_value()
 			case _:
 				raise ValueError('Unhandled return type')
 

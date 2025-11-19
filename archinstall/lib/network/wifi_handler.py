@@ -52,7 +52,7 @@ class WifiHandler:
 
 		match result.type_:
 			case ResultType.Selection:
-				if result.value() is False:
+				if result.get_value() is False:
 					tui.exit(False)
 					return None
 			case ResultType.Skip | ResultType.Reset:
@@ -142,7 +142,7 @@ class WifiHandler:
 					tui.exit(False)
 					return False
 
-				network = result.value()
+				network = result.get_value()
 			case ResultType.Skip | ResultType.Reset:
 				tui.exit(False)
 				return False
@@ -250,7 +250,7 @@ class WifiHandler:
 			debug('No password provided, aborting connection')
 			return None
 
-		return result.value()
+		return result.get_value()
 
 	def _get_scan_results(self, iface: str) -> list[WifiNetwork]:
 		debug(f'Retrieving scan results: {iface}')

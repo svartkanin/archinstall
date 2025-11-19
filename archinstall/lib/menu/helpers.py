@@ -1,9 +1,20 @@
-from typing import Awaitable, Callable, Literal, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import Literal, TypeVar, override
 
-from archinstall.lib.output import debug
+from textual.validation import ValidationResult, Validator
+
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.menu_item import MenuItemGroup
-from archinstall.tui.ui.components import ConfirmationScreen, InputScreen, LoadingScreen, NotifyScreen, OptionListScreen, SelectListScreen, TableSelectionScreen, tui
+from archinstall.tui.ui.components import (
+	ConfirmationScreen,
+	InputScreen,
+	LoadingScreen,
+	NotifyScreen,
+	OptionListScreen,
+	SelectListScreen,
+	TableSelectionScreen,
+	tui,
+)
 from archinstall.tui.ui.result import Result, ResultType
 
 ValueT = TypeVar('ValueT')
@@ -19,7 +30,7 @@ class SelectionMenu[ValueT]:
 		preview_orientation: Literal['right', 'bottom'] | None = None,
 		multi: bool = False,
 		search_enabled: bool = False,
-		show_frame: bool = True
+		show_frame: bool = True,
 	):
 		self._header = header
 		self._group: MenuItemGroup = group
@@ -42,21 +53,17 @@ class SelectionMenu[ValueT]:
 				allow_skip=self._allow_skip,
 				allow_reset=self._allow_reset,
 				preview_location=self._preview_orientation,
-				show_frame=self._show_frame
+				show_frame=self._show_frame,
 			).run()
 		else:
 			result = await SelectListScreen[ValueT](
-				self._group,
-				header=self._header,
-				allow_skip=self._allow_skip,
-				allow_reset=self._allow_reset,
-				preview_location=self._preview_orientation
+				self._group, header=self._header, allow_skip=self._allow_skip, allow_reset=self._allow_reset, preview_location=self._preview_orientation
 			).run()
 
 		if result.type_ == ResultType.Reset:
 			confirmed = await _confirm_reset()
 
-			if confirmed.value() is False:
+			if confirmed.get_value() is False:
 				return await self._run()
 
 		tui.exit(result)
@@ -90,7 +97,7 @@ class Confirmation[ValueT]:
 		if result.type_ == ResultType.Reset:
 			confirmed = await _confirm_reset()
 
-			if confirmed.value() is False:
+			if confirmed.get_value() is False:
 				return await self._run()
 
 		tui.exit(result)
@@ -112,7 +119,23 @@ class Notify[ValueT]:
 		tui.exit(True)
 
 
-class Input[ValueT]:
+class GenericValidator(Validator):
+	def __init__(self, validator_callback: Callable[[str | None], str | None]) -> None:
+		super().__init__()
+
+		self._validator_callback = validator_callback
+
+	@override
+	def validate(self, value: str) -> ValidationResult:
+		result = self._validator_callback(value)
+
+		if result is not None:
+			return self.failure(result)
+
+		return self.success()
+
+
+class Input:
 	def __init__(
 		self,
 		header: str | None = None,
@@ -121,6 +144,7 @@ class Input[ValueT]:
 		default_value: str | None = None,
 		allow_skip: bool = True,
 		allow_reset: bool = False,
+		validator_callback: Callable[[str | None], str | None] | None = None,
 	):
 		self._header = header
 		self._placeholder = placeholder
@@ -128,12 +152,15 @@ class Input[ValueT]:
 		self._default_value = default_value
 		self._allow_skip = allow_skip
 		self._allow_reset = allow_reset
+		self._validator_callback = validator_callback
 
 	def show(self) -> Result[ValueT]:
 		result = tui.run(self)
 		return result
 
 	async def _run(self) -> None:
+		validator = GenericValidator(self._validator_callback) if self._validator_callback else None
+
 		result = await InputScreen(
 			header=self._header,
 			placeholder=self._placeholder,
@@ -141,23 +168,20 @@ class Input[ValueT]:
 			default_value=self._default_value,
 			allow_skip=self._allow_skip,
 			allow_reset=self._allow_reset,
+			validator=validator,
 		).run()
 
 		if result.type_ == ResultType.Reset:
 			confirmed = await _confirm_reset()
 
-			if confirmed.value() is False:
+			if confirmed.get_value() is False:
 				return await self._run()
 
 		tui.exit(result)
 
 
 class Loading[ValueT]:
-	def __init__(
-		self,
-		header: str | None = None,
-		timer: int = 3
-	):
+	def __init__(self, header: str | None = None, timer: int = 3):
 		self._header = header
 		self._timer = timer
 
@@ -206,12 +230,13 @@ class TableMenu[ValueT]:
 			allow_skip=self._allow_skip,
 			allow_reset=self._allow_reset,
 			loading_header=self._loading_header,
+			multi=self._multi,
 		).run()
 
 		if result.type_ == ResultType.Reset:
 			confirmed = await _confirm_reset()
 
-			if confirmed.value() is False:
+			if confirmed.get_value() is False:
 				return await self._run()
 
 		tui.exit(result)

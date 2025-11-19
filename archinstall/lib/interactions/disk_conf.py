@@ -4,7 +4,6 @@ from archinstall.lib.args import arch_config_handler
 from archinstall.lib.disk.device_handler import device_handler
 from archinstall.lib.disk.partitioning_menu import manual_partitioning
 from archinstall.lib.menu.helpers import Confirmation, Notify, SelectionMenu, TableMenu
-from archinstall.lib.menu.menu_helper import MenuHelper
 from archinstall.lib.models.device import (
 	BDevice,
 	BtrfsMountOption,
@@ -70,7 +69,7 @@ def select_devices(preset: list[BDevice] | None = []) -> list[BDevice]:
 		case ResultType.Skip:
 			return preset
 		case ResultType.Selection:
-			selected_device_info = result.values()
+			selected_device_info = result.get_values()
 			selected_devices = []
 
 			for device in devices:
@@ -142,7 +141,7 @@ def select_disk_config(preset: DiskLayoutConfiguration | None = None) -> DiskLay
 		case ResultType.Reset:
 			return None
 		case ResultType.Selection:
-			selection = result.value()
+			selection = result.get_value()
 
 			if selection == pre_mount_mode:
 				output = 'You will use whatever drive-setup is mounted at the specified directory\n'
@@ -167,14 +166,14 @@ def select_disk_config(preset: DiskLayoutConfiguration | None = None) -> DiskLay
 			if not devices:
 				return None
 
-			if result.value() == default_layout:
+			if result.get_value() == default_layout:
 				modifications = get_default_partition_layout(devices)
 				if modifications:
 					return DiskLayoutConfiguration(
 						config_type=DiskLayoutType.Default,
 						device_modifications=modifications,
 					)
-			elif result.value() == manual_mode:
+			elif result.get_value() == manual_mode:
 				preset_mods = preset.device_modifications if preset else []
 				modifications = _manual_partitioning(preset_mods, devices)
 
@@ -210,7 +209,7 @@ def select_lvm_config(
 		case ResultType.Reset:
 			return None
 		case ResultType.Selection:
-			if result.value() == default_mode:
+			if result.get_value() == default_mode:
 				return suggest_lvm_layout(disk_config)
 
 	return None
@@ -249,12 +248,14 @@ def select_main_filesystem_format() -> FilesystemType:
 	group = MenuItemGroup(items, sort_items=False)
 	result = SelectionMenu[FilesystemType](
 		group,
+		header=tr('Select main filesystem'),
 		allow_skip=False,
+		show_frame=False,
 	).show()
 
 	match result.type_:
 		case ResultType.Selection:
-			return result.value()
+			return result.get_value()
 		case _:
 			raise ValueError('Unhandled result type')
 
@@ -279,7 +280,7 @@ def select_mount_options() -> list[str]:
 		case ResultType.Skip:
 			return []
 		case ResultType.Selection:
-			return [result.value()]
+			return [result.get_value()]
 		case _:
 			raise ValueError('Unhandled result type')
 
