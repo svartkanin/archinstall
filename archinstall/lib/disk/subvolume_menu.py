@@ -58,10 +58,10 @@ class SubvolumeMenu(ListManager[SubvolumeModification]):
 			case _:
 				assert_never(result.type_)
 
-		header = f'{tr("Subvolume name")}: {name}\n'
+		header = f'{tr("Subvolume name")}: {name}\n\n'
+		header += tr('Enter subvolume mountpoint')
 
 		path = prompt_dir(
-			tr('Subvolume mountpoint'),
 			header=header,
 			allow_skip=True,
 			validate=True,
@@ -80,7 +80,7 @@ class SubvolumeMenu(ListManager[SubvolumeModification]):
 		entry: SubvolumeModification | None,
 		data: list[SubvolumeModification],
 	) -> list[SubvolumeModification]:
-		if action == self._actions[0]:  # add
+		if action == self._actions[0]:	# add
 			new_subvolume = self._add_subvolume()
 
 			if new_subvolume is not None:
@@ -89,7 +89,7 @@ class SubvolumeMenu(ListManager[SubvolumeModification]):
 				data = [d for d in data if d.name != new_subvolume.name]
 				data += [new_subvolume]
 		elif entry is not None:  # edit
-			if action == self._actions[1]:  # edit subvolume
+			if action == self._actions[1]:	# edit subvolume
 				new_subvolume = self._add_subvolume(entry)
 
 				if new_subvolume is not None:

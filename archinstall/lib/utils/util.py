@@ -2,9 +2,7 @@ from pathlib import Path
 
 from archinstall.lib.menu.helpers import Input
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.curses_menu import EditMenu
-from archinstall.tui.result import ResultType
-from archinstall.tui.types import Alignment
+from archinstall.tui.ui.result import ResultType
 
 from ..models.users import Password
 from ..output import FormattedOutput
@@ -61,7 +59,6 @@ def get_password(
 
 
 def prompt_dir(
-	text: str,
 	header: str | None = None,
 	validate: bool = True,
 	must_exist: bool = True,
@@ -85,24 +82,22 @@ def prompt_dir(
 	else:
 		validate_func = None
 
-	result = EditMenu(
-		text,
+	result = Input(
 		header=header,
-		alignment=Alignment.CENTER,
 		allow_skip=allow_skip,
-		validator=validate_func,
-		default_text=preset,
-	).input()
+		validator_callback=validate_func,
+		default_value=preset,
+	).show()
 
 	match result.type_:
 		case ResultType.Skip:
 			return None
 		case ResultType.Selection:
-			if not result.text():
+			if not result.get_value():
 				return None
-			return Path(result.text())
-
-	return None
+			return Path(result.get_value())
+		case _:
+			return None
 
 
 def is_subpath(first: Path, second: Path) -> bool:

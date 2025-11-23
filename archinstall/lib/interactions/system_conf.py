@@ -5,9 +5,7 @@ from archinstall.lib.translationhandler import tr
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType as UiResultType
 
-from ..args import arch_config_handler
 from ..hardware import GfxDriver, SysInfo
-from ..models.bootloader import Bootloader
 
 
 def select_kernel(preset: list[str] = []) -> list[str]:
@@ -44,6 +42,7 @@ def select_kernel(preset: list[str] = []) -> list[str]:
 			return result.get_values()
 
 
+<<<<<<< HEAD
 def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
 	# Systemd is UEFI only
 	options = []
@@ -107,6 +106,8 @@ def ask_for_uki(preset: bool = True) -> bool:
 			raise ValueError('Unhandled result type')
 
 
+=======
+>>>>>>> origin/master
 def select_driver(options: list[GfxDriver] = [], preset: GfxDriver | None = None) -> GfxDriver | None:
 	"""
 	Some what convoluted function, whose job is simple.

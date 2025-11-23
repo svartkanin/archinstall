@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import Any, Literal, TypeVar, override
+from typing import Any, Literal, TypeVar, override, ClassVar
 
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Center, Container, Horizontal, Vertical
+from textual.containers import Center, Horizontal, Vertical
 from textual.events import Key
 from textual.screen import Screen
 from textual.validation import Validator
@@ -24,7 +24,7 @@ ValueT = TypeVar('ValueT')
 
 
 class BaseScreen(Screen[Result[ValueT]]):
-    BINDINGS = [  # noqa: RUF012
+    BINDINGS: ClassVar = [
         Binding('escape', 'cancel_operation', 'Cancel', show=False),
         Binding('ctrl+c', 'reset_operation', 'Reset', show=False),
     ]
@@ -36,11 +36,11 @@ class BaseScreen(Screen[Result[ValueT]]):
 
     def action_cancel_operation(self) -> None:
         if self._allow_skip:
-            self.dismiss(Result(ResultType.Skip))  # type: ignore[unused-awaitable]
+            _ = self.dismiss(Result(ResultType.Skip))
 
     async def action_reset_operation(self) -> None:
         if self._allow_reset:
-            self.dismiss(Result(ResultType.Reset))  # type: ignore[unused-awaitable]
+            _ = self.dismiss(Result(ResultType.Reset))
 
     def _compose_header(self) -> ComposeResult:
         """Compose the app header if global header text is available"""
@@ -101,11 +101,11 @@ class LoadingScreen(BaseScreen[None]):
         self.set_timer(self._timer, self.action_pop_screen)
 
     def action_pop_screen(self) -> None:
-        self.dismiss()  # type: ignore[unused-awaitable]
+        _ = self.dismiss()
 
 
 class OptionListScreen(BaseScreen[ValueT]):
-    BINDINGS = [
+    BINDINGS: ClassVar = [
         Binding('j', 'cursor_down', 'Down', show=False),
         Binding('k', 'cursor_up', 'Up', show=False),
     ]
@@ -243,7 +243,7 @@ class OptionListScreen(BaseScreen[ValueT]):
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
         selected_option = event.option
         item = self._group.find_by_id(selected_option.id)
-        self.dismiss(Result(ResultType.Selection, _item=item))
+        _ = self.dismiss(Result(ResultType.Selection, _item=item))
 
     def on_option_list_option_highlighted(self, event: OptionList.OptionHighlighted) -> None:
         if self._preview_location is None:
@@ -264,7 +264,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 
 
 class SelectListScreen(BaseScreen[ValueT]):
-    BINDINGS = [
+    BINDINGS: ClassVar = [
         Binding('j', 'cursor_down', 'Down', show=False),
         Binding('k', 'cursor_up', 'Up', show=False),
     ]
@@ -353,7 +353,7 @@ class SelectListScreen(BaseScreen[ValueT]):
     def on_key(self, event: Key) -> None:
         if event.key == 'enter':
             items: list[MenuItem] = self.query_one(SelectionList).selected
-            self.dismiss(Result(ResultType.Selection, _item=items))
+            _ = self.dismiss(Result(ResultType.Selection, _item=items))
 
     async def run(self) -> Result[ValueT]:
         assert TApp.app
@@ -397,7 +397,7 @@ class SelectListScreen(BaseScreen[ValueT]):
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
         selected_option = event.option
         item = self._group.find_by_id(selected_option.id)
-        self.dismiss(Result(ResultType.Selection, _item=item))
+        _ = self.dismiss(Result(ResultType.Selection, _item=item))
 
     def on_selection_list_selection_highlighted(self, event: SelectionList.SelectionHighlighted[ValueT]) -> None:
         if self._preview_location is None:
@@ -419,7 +419,7 @@ class SelectListScreen(BaseScreen[ValueT]):
 
 
 class ConfirmationScreen(BaseScreen[ValueT]):
-    BINDINGS = [  # noqa: RUF012
+    BINDINGS: ClassVar = [
         Binding('l', 'focus_right', 'Focus right', show=False),
         Binding('h', 'focus_left', 'Focus left', show=False),
         Binding('right', 'focus_right', 'Focus right', show=False),
@@ -533,7 +533,7 @@ class ConfirmationScreen(BaseScreen[ValueT]):
             item = self._group.focus_item
             if not item:
                 return None
-            self.dismiss(Result(ResultType.Selection, _item=item))  # type: ignore[unused-awaitable]
+            _ = self.dismiss(Result(ResultType.Selection, _item=item))
 
 
 class NotifyScreen(ConfirmationScreen[ValueT]):
@@ -644,11 +644,11 @@ class InputScreen(BaseScreen[str]):
 
             self.query_one('#input-failure', Static).update(failure_out)
         else:
-            self.dismiss(Result(ResultType.Selection, _data=event.value))
+            _ = self.dismiss(Result(ResultType.Selection, _data=event.value))
 
 
 class TableSelectionScreen(BaseScreen[ValueT]):
-    BINDINGS = [  # noqa: RUF012
+    BINDINGS: ClassVar = [
         Binding('j', 'cursor_down', 'Down', show=False),
         Binding('k', 'cursor_up', 'Up', show=False),
         Binding('space', 'toggle_selection', 'Toggle Selection', show=False),
@@ -770,7 +770,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
     def _put_data_to_table(self, table: DataTable[ValueT], data: list[ValueT]) -> None:
         if not data:
-            self.dismiss(Result(ResultType.Selection))  # type: ignore[unused-awaitable]
+            _ = self.dismiss(Result(ResultType.Selection))
             return
 
         cols = list(data[0].table_data().keys())  # type: ignore[attr-defined]
@@ -819,16 +819,16 @@ class TableSelectionScreen(BaseScreen[ValueT]):
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         if self._multi:
             if len(self._selected_keys) == 0:
-                self.dismiss(Result(ResultType.Selection, _data=[event.row_key.value]))
+                _ = self.dismiss(Result(ResultType.Selection, _data=[event.row_key.value]))
             else:
                 data = [row_key.value for row_key in self._selected_keys]  # type: ignore[unused-awaitable]
-                self.dismiss(Result(ResultType.Selection, _data=data))
+                _ = self.dismiss(Result(ResultType.Selection, _data=data))
         else:
-            self.dismiss(Result(ResultType.Selection, _data=event.row_key.value))
+            _ = self.dismiss(Result(ResultType.Selection, _data=event.row_key.value))
 
 
 class _AppInstance(App[ValueT]):
-    BINDINGS = [  # noqa: RUF012
+    BINDINGS: ClassVar = [
         Binding('ctrl+h', 'trigger_help', 'Show/Hide help', show=True),
     ]
 

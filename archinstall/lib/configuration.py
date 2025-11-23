@@ -180,7 +180,6 @@ def save_config(config: ArchConfig) -> None:
 	readline.parse_and_bind('tab: complete')
 
 	dest_path = prompt_dir(
-		tr('Directory'),
 		tr('Enter a directory for the configuration(s) to be saved (tab completion enabled)') + '\n',
 		allow_skip=True,
 	)

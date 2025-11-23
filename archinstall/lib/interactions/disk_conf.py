@@ -144,10 +144,11 @@ def select_disk_config(preset: DiskLayoutConfiguration | None = None) -> DiskLay
 			selection = result.get_value()
 
 			if selection == pre_mount_mode:
-				output = 'You will use whatever drive-setup is mounted at the specified directory\n'
-				output += "WARNING: Archinstall won't check the suitability of this setup\n"
+				output = tr('Enter root mount directory') + '\n\n'
+				output += tr('You will use whatever drive-setup is mounted at the specified directory') + '\n'
+				output += tr("WARNING: Archinstall won't check the suitability of this setup")
 
-				path = prompt_dir(tr('Root mount directory'), output, allow_skip=True)
+				path = prompt_dir(output, allow_skip=True)
 
 				if path is None:
 					return None
