@@ -20,6 +20,9 @@ class Result[ValueT]:
 	def has_data(self) -> bool:
 		return self._data is not None
 
+	def has_value(self) -> bool:
+		return self._item is not None
+
 	def item(self) -> MenuItem:
 		if isinstance(self._item, list) or self._item is None:
 			raise ValueError('Invalid item type')
@@ -33,7 +36,7 @@ class Result[ValueT]:
 
 	def get_value(self) -> ValueT:
 		if self._item is not None:
-			return self.item().get_value()  # type: ignore[no-any-return]
+			return self.item().get_value()	# type: ignore[no-any-return]
 
 		if type(self._data) is not list and self._data is not None:
 			return cast(ValueT, self._data)

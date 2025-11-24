@@ -91,7 +91,7 @@ class ListManager[ValueT]:
 		self._last_choice = value
 
 		if result.get_value() == self._cancel_action:
-			return self._original_data  # return the original list
+			return self._original_data	# return the original list
 		else:
 			return self._data
 
@@ -101,13 +101,14 @@ class ListManager[ValueT]:
 		items = [MenuItem(o, value=o) for o in options]
 		group = MenuItemGroup(items, sort_items=False)
 
-		header = f'{self.selected_action_display(entry)}\n'
+		header = f'{self.selected_action_display(entry)}'
 
 		result = SelectionMenu[str](
 			group,
 			header=header,
 			search_enabled=False,
 			allow_skip=False,
+			show_frame=False,
 		).show()
 
 		match result.type_:

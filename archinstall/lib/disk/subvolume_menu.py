@@ -1,11 +1,10 @@
 from pathlib import Path
 from typing import assert_never, override
 
+from archinstall.lib.menu.helpers import Input
 from archinstall.lib.models.device import SubvolumeModification
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.curses_menu import EditMenu
-from archinstall.tui.result import ResultType
-from archinstall.tui.types import Alignment
+from archinstall.tui.ui.result import ResultType
 
 from ..menu.list_manager import ListManager
 from ..utils.util import prompt_dir
@@ -40,19 +39,18 @@ class SubvolumeMenu(ListManager[SubvolumeModification]):
 				return None
 			return tr('Value cannot be empty')
 
-		result = EditMenu(
-			tr('Subvolume name'),
-			alignment=Alignment.CENTER,
+		result = Input(
+			header=tr('Enter subvolume name'),
 			allow_skip=True,
-			default_text=str(preset.name) if preset else None,
-			validator=validate,
-		).input()
+			default_value=str(preset.name) if preset else None,
+			validator_callback=validate,
+		).show()
 
 		match result.type_:
 			case ResultType.Skip:
 				return preset
 			case ResultType.Selection:
-				name = result.text()
+				name = result.get_value()
 			case ResultType.Reset:
 				raise ValueError('Unhandled result type')
 			case _:

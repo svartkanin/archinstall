@@ -51,17 +51,17 @@ class CustomMirrorRepositoriesList(ListManager[CustomRepository]):
 		entry: CustomRepository | None,
 		data: list[CustomRepository],
 	) -> list[CustomRepository]:
-		if action == self._actions[0]:  # add
+		if action == self._actions[0]:	# add
 			new_repo = self._add_custom_repository()
 			if new_repo is not None:
 				data = [d for d in data if d.name != new_repo.name]
 				data += [new_repo]
-		elif action == self._actions[1] and entry:  # modify repo
+		elif action == self._actions[1] and entry:	# modify repo
 			new_repo = self._add_custom_repository(entry)
 			if new_repo is not None:
 				data = [d for d in data if d.name != entry.name]
 				data += [new_repo]
-		elif action == self._actions[2] and entry:  # delete
+		elif action == self._actions[2] and entry:	# delete
 			data = [d for d in data if d != entry]
 
 		return data
@@ -171,17 +171,17 @@ class CustomMirrorServersList(ListManager[CustomServer]):
 		entry: CustomServer | None,
 		data: list[CustomServer],
 	) -> list[CustomServer]:
-		if action == self._actions[0]:  # add
+		if action == self._actions[0]:	# add
 			new_server = self._add_custom_server()
 			if new_server is not None:
 				data = [d for d in data if d.url != new_server.url]
 				data += [new_server]
-		elif action == self._actions[1] and entry:  # modify repo
+		elif action == self._actions[1] and entry:	# modify repo
 			new_server = self._add_custom_server(entry)
 			if new_server is not None:
 				data = [d for d in data if d.url != entry.url]
 				data += [new_server]
-		elif action == self._actions[2] and entry:  # delete
+		elif action == self._actions[2] and entry:	# delete
 			data = [d for d in data if d != entry]
 
 		return data
@@ -298,9 +298,11 @@ class MirrorMenu(AbstractSubMenu[MirrorConfiguration]):
 
 
 def select_mirror_regions(preset: list[MirrorRegion]) -> list[MirrorRegion]:
-	Loading(tr('Loading mirror regions...')).show()
+	Loading[None](
+		header=tr('Loading mirror regions...'),
+		data_callback=lambda: mirror_list_handler.load_mirrors()
+	).show()
 
-	mirror_list_handler.load_mirrors()
 	available_regions = mirror_list_handler.get_mirror_regions()
 
 	if not available_regions:

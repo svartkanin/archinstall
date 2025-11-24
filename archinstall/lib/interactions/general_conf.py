@@ -4,14 +4,12 @@ from enum import Enum
 from pathlib import Path
 from typing import assert_never
 
-from archinstall.lib.menu.helpers import Input, SelectionMenu
+from archinstall.lib.menu.helpers import Confirmation, Input, Loading, Notify, SelectionMenu
 from archinstall.lib.models.packages import Repository
 from archinstall.lib.packages.packages import list_available_packages
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.curses_menu import EditMenu, SelectMenu, Tui
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
-from archinstall.tui.result import ResultType
-from archinstall.tui.types import Alignment, FrameProperties, Orientation, PreviewStyle
+from archinstall.tui.ui.result import ResultType
 from archinstall.tui.ui.result import ResultType as UiResultType
 
 from ..locale.utils import list_timezones
@@ -39,14 +37,11 @@ def ask_ntp(preset: bool = True) -> bool:
 	group = MenuItemGroup.yes_no()
 	group.focus_item = preset_val
 
-	result = SelectMenu[bool](
+	result = SelectionMenu[bool](
 		group,
 		header=header,
 		allow_skip=True,
-		alignment=Alignment.CENTER,
-		columns=2,
-		orientation=Orientation.HORIZONTAL,
-	).run()
+	).show()
 
 	match result.type_:
 		case ResultType.Skip:
@@ -85,13 +80,12 @@ def ask_for_a_timezone(preset: str | None = None) -> str | None:
 	group.set_selected_by_value(preset)
 	group.set_default_by_value(default)
 
-	result = SelectMenu[str](
+	result = SelectionMenu[str](
 		group,
+		header=tr('Select timezone'),
 		allow_reset=True,
 		allow_skip=True,
-		frame=FrameProperties.min(tr('Timezone')),
-		alignment=Alignment.CENTER,
-	).run()
+	).show()
 
 	match result.type_:
 		case ResultType.Skip:
@@ -128,15 +122,6 @@ def select_archinstall_language(languages: list[Language], preset: Language) -> 
 	title += 'All available fonts can be found in "/usr/share/kbd/consolefonts"\n'
 	title += 'e.g. setfont LatGrkCyr-8x16 (to display latin/greek/cyrillic characters)\n'
 
-	# result = SelectMenu[Language](
-	# group,
-	# header=title,
-	# allow_skip=True,
-	# allow_reset=False,
-	# alignment=Alignment.CENTER,
-	# frame=FrameProperties.min(header=tr('Select language')),
-	# ).run()
-
 	result = SelectionMenu[Language](
 		header=title,
 		group=group,
@@ -161,11 +146,17 @@ def ask_additional_packages_to_install(
 
 	respos_text = ', '.join([r.value for r in repositories])
 	output = tr('Repositories: {}').format(respos_text) + '\n'
-
 	output += tr('Loading packages...')
-	Tui.print(output, clear_screen=True)
 
-	packages = list_available_packages(tuple(repositories))
+	packages = Loading[dict[str, AvailablePackage]](
+		header=output,
+		data_callback=lambda: list_available_packages(tuple(repositories))
+	).show()
+
+	if packages is None:
+		Notify(tr('No packages found')).show()
+		return []
+
 	package_groups = PackageGroup.from_available_packages(packages)
 
 	# Additional packages (with some light weight error handling for invalid package names)
@@ -184,7 +175,7 @@ def ask_additional_packages_to_install(
 		MenuItem(
 			name,
 			value=pkg,
-			preview_action=lambda x: x.value.info(),
+			preview_action=lambda x: x.value.info() if x.value else None,
 		)
 		for name, pkg in packages.items()
 	]
@@ -193,7 +184,7 @@ def ask_additional_packages_to_install(
 		MenuItem(
 			name,
 			value=group,
-			preview_action=lambda x: x.value.info(),
+			preview_action=lambda x: x.value.info() if x.value else None,
 		)
 		for name, group in package_groups.items()
 	]
@@ -201,17 +192,15 @@ def ask_additional_packages_to_install(
 	menu_group = MenuItemGroup(items, sort_items=True)
 	menu_group.set_selected_by_value(preset_packages)
 
-	result = SelectMenu[AvailablePackage | PackageGroup](
+	result = SelectionMenu[AvailablePackage | PackageGroup](
 		menu_group,
 		header=header,
-		alignment=Alignment.LEFT,
 		allow_reset=True,
 		allow_skip=True,
 		multi=True,
-		preview_frame=FrameProperties.max('Package info'),
-		preview_style=PreviewStyle.RIGHT,
-		preview_size='auto',
-	).run()
+		preview_orientation='right',
+		show_frame=False,
+	).show()
 
 	match result.type_:
 		case ResultType.Skip:
@@ -242,14 +231,15 @@ def add_number_of_parallel_downloads(preset: int | None = None) -> int | None:
 
 		return tr('Invalid download number')
 
-	result = EditMenu(
-		tr('Number downloads'),
+	header += tr('Enter a the number of parallel downloads to be enabled (max recommended: {})').format(max_recommended)
+
+	result = Input(
 		header=header,
 		allow_skip=True,
 		allow_reset=True,
-		validator=validator,
-		default_text=str(preset) if preset is not None else None,
-	).input()
+		validator_callback=validator,
+		default_value=str(preset) if preset is not None else None,
+	).show()
 
 	match result.type_:
 		case ResultType.Skip:
@@ -257,7 +247,7 @@ def add_number_of_parallel_downloads(preset: int | None = None) -> int | None:
 		case ResultType.Reset:
 			return 0
 		case ResultType.Selection:
-			downloads: int = int(result.text())
+			downloads: int = int(result.get_value())
 		case _:
 			assert_never(result.type_)
 
@@ -282,12 +272,11 @@ def ask_post_installation() -> PostInstallationAction:
 	items = [MenuItem(action.value, value=action) for action in PostInstallationAction]
 	group = MenuItemGroup(items)
 
-	result = SelectMenu[PostInstallationAction](
+	result = SelectionMenu[PostInstallationAction](
 		group,
 		header=header,
 		allow_skip=False,
-		alignment=Alignment.CENTER,
-	).run()
+	).show()
 
 	match result.type_:
 		case ResultType.Selection:
@@ -300,14 +289,11 @@ def ask_abort() -> None:
 	prompt = tr('Do you really want to abort?') + '\n'
 	group = MenuItemGroup.yes_no()
 
-	result = SelectMenu[bool](
+	result = Confirmation[bool](
 		group,
 		header=prompt,
 		allow_skip=False,
-		alignment=Alignment.CENTER,
-		columns=2,
-		orientation=Orientation.HORIZONTAL,
-	).run()
+	).show()
 
 	if result.item() == MenuItem.yes():
 		exit(0)

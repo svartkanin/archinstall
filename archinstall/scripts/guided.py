@@ -11,7 +11,6 @@ from archinstall.lib.disk.utils import disk_layouts
 from archinstall.lib.global_menu import GlobalMenu
 from archinstall.lib.installer import Installer, accessibility_tools_in_use, run_custom_user_commands
 from archinstall.lib.interactions.general_conf import PostInstallationAction, ask_post_installation
-from archinstall.lib.locale.locale_menu import select_locale_lang
 from archinstall.lib.models import Bootloader
 from archinstall.lib.models.device import (
 	DiskLayoutType,

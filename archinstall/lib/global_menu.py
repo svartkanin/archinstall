@@ -188,8 +188,8 @@ class GlobalMenu(AbstractMenu[None]):
 	def _safe_config(self) -> None:
 		# data: dict[str, Any] = {}
 		# for item in self._item_group.items:
-		#	if item.key is not None:
-		#		data[item.key] = item.value
+		# if item.key is not None:
+		# data[item.key] = item.value
 
 		self.sync_all_to_config()
 		save_config(self._arch_config)

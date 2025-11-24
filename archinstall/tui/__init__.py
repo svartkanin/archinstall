@@ -1,4 +1,4 @@
-from .curses_menu import EditMenu, SelectMenu, Tui
+from .curses_menu import SelectMenu, Tui
 from .menu_item import MenuItem, MenuItemGroup
 from .result import Result, ResultType
 from .types import Alignment, Chars, FrameProperties, FrameStyle, Orientation, PreviewStyle
@@ -6,7 +6,6 @@ from .types import Alignment, Chars, FrameProperties, FrameStyle, Orientation, P
 __all__ = [
 	'Alignment',
 	'Chars',
-	'EditMenu',
 	'FrameProperties',
 	'FrameStyle',
 	'MenuItem',
