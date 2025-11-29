@@ -2,7 +2,6 @@ from collections.abc import Awaitable, Callable
 from typing import Literal, TypeVar, override
 
 from textual.validation import ValidationResult, Validator
-from textual.widgets import Select
 
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.menu_item import MenuItemGroup
@@ -31,7 +30,7 @@ class SelectionMenu[ValueT]:
 		preview_orientation: Literal['right', 'bottom'] | None = None,
 		multi: bool = False,
 		search_enabled: bool = False,
-		show_frame: bool = True,
+		show_frame: bool = False,
 	):
 		self._header = header
 		self._group: MenuItemGroup = group
@@ -70,25 +69,28 @@ class SelectionMenu[ValueT]:
 		tui.exit(result)
 
 
-class Confirmation[ValueT]:
+class Confirmation:
 	def __init__(
 		self,
-		group: MenuItemGroup,
 		header: str | None = None,
 		allow_skip: bool = True,
 		allow_reset: bool = False,
+		preset: bool = False,
 	):
 		self._header = header
-		self._group: MenuItemGroup = group
 		self._allow_skip = allow_skip
 		self._allow_reset = allow_reset
+		self._preset = preset
 
-	def show(self) -> Result[ValueT]:
+		self._group: MenuItemGroup = MenuItemGroup.yes_no()
+		self._group.set_focus_by_value(preset)
+
+	def show(self) -> Result[bool]:
 		result = tui.run(self)
 		return result
 
 	async def _run(self) -> None:
-		result = await ConfirmationScreen[ValueT](
+		result = await ConfirmationScreen[bool](
 			self._group,
 			header=self._header,
 			allow_skip=self._allow_skip,

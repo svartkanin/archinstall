@@ -271,7 +271,8 @@ def select_mount_options() -> list[str]:
 		MenuItem(disable_cow, value=BtrfsMountOption.nodatacow.value),
 	]
 	group = MenuItemGroup(items, sort_items=False)
-	result = Confirmation[str](
+
+	result = SelectionMenu[str](
 		group,
 		header=prompt,
 		allow_skip=True,

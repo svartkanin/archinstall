@@ -3,6 +3,7 @@ from typing import override
 from archinstall.lib.disk.fido import Fido2
 from archinstall.lib.interactions.manage_users_conf import ask_for_additional_users
 from archinstall.lib.menu.abstract_menu import AbstractSubMenu
+from archinstall.lib.menu.helpers import Confirmation, SelectionMenu
 from archinstall.lib.models.authentication import AuthenticationConfiguration, U2FLoginConfiguration, U2FLoginMethod
 from archinstall.lib.models.users import Password, User
 from archinstall.lib.output import FormattedOutput
@@ -135,14 +136,11 @@ def select_u2f_login(preset: U2FLoginConfiguration) -> U2FLoginConfiguration | N
 			group.focus_item = MenuItem.no()
 			header = tr('Enable passwordless sudo?')
 
-			result_sudo = SelectMenu[bool](
+			result_sudo = Confirmation[bool](
 				group,
 				header=header,
-				alignment=Alignment.CENTER,
-				columns=2,
-				orientation=Orientation.HORIZONTAL,
 				allow_skip=True,
-			).run()
+			).show()
 
 			passwordless_sudo = result_sudo.item() == MenuItem.yes()
 

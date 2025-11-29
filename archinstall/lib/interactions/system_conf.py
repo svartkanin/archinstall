@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from archinstall.lib.menu.helpers import Confirmation, SelectionMenu
+from archinstall.lib.models import Bootloader
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
-from archinstall.tui.ui.result import ResultType as UiResultType
+from archinstall.tui.ui.result import ResultType
 
 from ..hardware import GfxDriver, SysInfo
 
@@ -34,11 +35,11 @@ def select_kernel(preset: list[str] = []) -> list[str]:
 	).show()
 
 	match result.type_:
-		case UiResultType.Skip:
+		case ResultType.Skip:
 			return preset
-		case UiResultType.Reset:
+		case ResultType.Reset:
 			return []
-		case UiResultType.Selection:
+		case ResultType.Selection:
 			return result.get_values()
 
 
@@ -76,11 +77,11 @@ def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
 	).show()
 
 	match result.type_:
-		case UiResultType.Skip:
+		case ResultType.Skip:
 			return preset
-		case UiResultType.Selection:
+		case ResultType.Selection:
 			return result.get_value()
-		case UiResultType.Reset:
+		case ResultType.Reset:
 			raise ValueError('Unhandled result type')
 
 
@@ -90,18 +91,17 @@ def ask_for_uki(preset: bool = True) -> bool:
 	group = MenuItemGroup.yes_no()
 	group.set_focus_by_value(preset)
 
-	result = Confirmation[bool](
-		group,
+	result = Confirmation(
 		header=prompt,
 		allow_skip=True,
 	).show()
 
 	match result.type_:
-		case UiResultType.Skip:
+		case ResultType.Skip:
 			return preset
-		case UiResultType.Selection:
-			return result.item() == MenuItem.yes()
-		case UiResultType.Reset:
+		case ResultType.Selection:
+			return result.get_value()
+		case ResultType.Reset:
 			raise ValueError('Unhandled result type')
 
 
@@ -140,11 +140,11 @@ def select_driver(options: list[GfxDriver] = [], preset: GfxDriver | None = None
 	).show()
 
 	match result.type_:
-		case UiResultType.Skip:
+		case ResultType.Skip:
 			return preset
-		case UiResultType.Reset:
+		case ResultType.Reset:
 			return None
-		case UiResultType.Selection:
+		case ResultType.Selection:
 			return result.get_value()
 
 
@@ -159,16 +159,15 @@ def ask_for_swap(preset: bool = True) -> bool:
 	group = MenuItemGroup.yes_no()
 	group.set_focus_by_value(default_item)
 
-	result = Confirmation[bool](
-		group,
+	result = Confirmation(
 		header=prompt,
 		allow_skip=True,
 	).show()
 
 	match result.type_:
-		case UiResultType.Skip:
+		case ResultType.Skip:
 			return preset
-		case UiResultType.Selection:
+		case ResultType.Selection:
 			return result.item() == MenuItem.yes()
-		case UiResultType.Reset:
+		case ResultType.Reset:
 			raise ValueError('Unhandled result type')
