@@ -4,8 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import cached_property
-from typing import Any, ClassVar, Self, overload
-from typing_extensions import override
+from typing import Any, ClassVar, Self, override
 
 from archinstall.lib.translationhandler import tr
 
@@ -31,14 +30,14 @@ class MenuItem:
 	_yes: ClassVar[MenuItem | None] = None
 	_no: ClassVar[MenuItem | None] = None
 
-	def __post_init__(self):
+	def __post_init__(self) -> None:
 		if self.key is not None:
 			self._id = self.key
 		else:
 			self._id = str(id(self))
 
 	@override
-	def __hash__(self):
+	def __hash__(self) -> int:
 		return hash(self._id)
 
 	def get_id(self) -> str:
@@ -117,14 +116,14 @@ class MenuItemGroup:
 
 	def add_item(self, item: MenuItem) -> None:
 		self._menu_items.append(item)
-		delattr(self, 'items')	# resetting the cache
+		delattr(self, 'items')  # resetting the cache
 
-	def find_by_id(self, id: str) -> MenuItem:
+	def find_by_id(self, item_id: str) -> MenuItem:
 		for item in self._menu_items:
-			if item.get_id() == id:
+			if item.get_id() == item_id:
 				return item
 
-		raise ValueError(f'No item found for id: {id}')
+		raise ValueError(f'No item found for id: {item_id}')
 
 	def find_by_key(self, key: str) -> MenuItem:
 		for item in self._menu_items:
@@ -281,17 +280,17 @@ class MenuItemGroup:
 
 	def set_filter_pattern(self, pattern: str) -> None:
 		self._filter_pattern = pattern
-		delattr(self, 'items')	# resetting the cache
+		delattr(self, 'items')  # resetting the cache
 		self._reload_focus_item()
 
 	def append_filter(self, pattern: str) -> None:
 		self._filter_pattern += pattern
-		delattr(self, 'items')	# resetting the cache
+		delattr(self, 'items')  # resetting the cache
 		self._reload_focus_item()
 
 	def reduce_filter(self) -> None:
 		self._filter_pattern = self._filter_pattern[:-1]
-		delattr(self, 'items')	# resetting the cache
+		delattr(self, 'items')  # resetting the cache
 		self._reload_focus_item()
 
 	def _reload_focus_item(self) -> None:

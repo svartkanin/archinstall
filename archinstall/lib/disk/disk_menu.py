@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import override
 
 from archinstall.lib.disk.encryption_menu import DiskEncryptionMenu
-from archinstall.lib.menu.helpers import SelectionMenu
+from archinstall.lib.menu.helpers import Selection
 from archinstall.lib.models.device import (
 	DEFAULT_ITER_TIME,
 	BtrfsOptions,
@@ -31,7 +31,7 @@ class DiskMenuConfig:
 	disk_encryption: DiskEncryption | None
 
 
-class DiskLayoutConfigurationMenu(AbstractSubMenu[DiskLayoutConfiguration]):
+class DiskLayoutConfigurationMenu(AbstractSubMenu[DiskMenuConfig]):
 	def __init__(self, disk_layout_config: DiskLayoutConfiguration | None):
 		if not disk_layout_config:
 			self._disk_menu_config = DiskMenuConfig(
@@ -94,8 +94,8 @@ class DiskLayoutConfigurationMenu(AbstractSubMenu[DiskLayoutConfiguration]):
 		]
 
 	@override
-	def run(self, additional_title: str | None = None) -> DiskLayoutConfiguration | None:
-		config: DiskMenuConfig | None = super().run(additional_title=additional_title)  # pyright: ignore[reportAssignmentType]
+	def run(self, additional_title: str | None = None) -> DiskLayoutConfiguration | None:  # type: ignore[override]
+		config: DiskMenuConfig | None = super().run(additional_title=additional_title)
 		if config is None:
 			return None
 
@@ -170,7 +170,7 @@ class DiskLayoutConfigurationMenu(AbstractSubMenu[DiskLayoutConfiguration]):
 			preset=preset_type,
 		)
 
-		result = SelectionMenu[SnapshotType](
+		result = Selection[SnapshotType](
 			group,
 			allow_reset=True,
 			allow_skip=True,
@@ -249,9 +249,10 @@ class DiskLayoutConfigurationMenu(AbstractSubMenu[DiskLayoutConfiguration]):
 
 	def _prev_disk_encryption(self, item: MenuItem) -> str | None:
 		disk_config: DiskLayoutConfiguration | None = self._item_group.find_by_key('disk_config').value
+		lvm_config: LvmConfiguration | None = self._item_group.find_by_key('lvm_config').value
 		enc_config: DiskEncryption | None = item.value
 
-		if disk_config and not DiskEncryption.validate_enc(disk_config.device_modifications, disk_config.lvm_config):
+		if disk_config and not DiskEncryption.validate_enc(disk_config.device_modifications, lvm_config):
 			return tr('LVM disk encryption with more than 2 partitions is currently not supported')
 
 		if enc_config:

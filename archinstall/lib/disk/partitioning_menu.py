@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from typing import override
 
-from archinstall.lib.menu.helpers import Confirmation, Input, SelectionMenu
+from archinstall.lib.menu.helpers import Confirmation, Input, Selection
 from archinstall.lib.models.device import (
 	BtrfsMountOption,
 	DeviceModification,
@@ -416,7 +416,7 @@ class PartitioningList(ListManager[DiskSegment]):
 		items = [MenuItem(fs.value, value=fs) for fs in fs_types]
 		group = MenuItemGroup(items, sort_items=False)
 
-		result = SelectionMenu[FilesystemType](
+		result = Selection[FilesystemType](
 			group,
 			header=prompt,
 			allow_skip=False,
@@ -544,8 +544,7 @@ class PartitioningList(ListManager[DiskSegment]):
 	def _reset_confirmation(self) -> bool:
 		prompt = tr('This will remove all newly added partitions, continue?') + '\n'
 
-		result = Confirmation[bool](
-			MenuItemGroup.yes_no(),
+		result = Confirmation(
 			header=prompt,
 			allow_skip=False,
 			allow_reset=False,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from archinstall.lib.menu.helpers import Confirmation, SelectionMenu
+from archinstall.lib.args import arch_config_handler
+from archinstall.lib.menu.helpers import Confirmation, Selection
 from archinstall.lib.models import Bootloader
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
@@ -26,12 +27,13 @@ def select_kernel(preset: list[str] = []) -> list[str]:
 	group.set_focus_by_value(default_kernel)
 	group.set_selected_by_value(preset)
 
-	result = SelectionMenu[str](
+	result = Selection[str](
 		group,
 		header=tr('Select which kernel(s) to install'),
 		allow_skip=True,
 		allow_reset=True,
 		multi=True,
+		show_frame=False,
 	).show()
 
 	match result.type_:
@@ -70,7 +72,7 @@ def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
 	group.set_default_by_value(default)
 	group.set_focus_by_value(preset)
 
-	result = SelectionMenu[Bootloader](
+	result = Selection[Bootloader](
 		group,
 		header=header,
 		allow_skip=True,
@@ -88,13 +90,7 @@ def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
 def ask_for_uki(preset: bool = True) -> bool:
 	prompt = tr('Would you like to use unified kernel images?') + '\n'
 
-	group = MenuItemGroup.yes_no()
-	group.set_focus_by_value(preset)
-
-	result = Confirmation(
-		header=prompt,
-		allow_skip=True,
-	).show()
+	result = Confirmation(header=prompt, allow_skip=True, preset=preset).show()
 
 	match result.type_:
 		case ResultType.Skip:
@@ -116,7 +112,15 @@ def select_driver(options: list[GfxDriver] = [], preset: GfxDriver | None = None
 	if not options:
 		options = [driver for driver in GfxDriver]
 
-	items = [MenuItem(o.value, value=o, preview_action=lambda x: x.value.packages_text()) for o in options]
+	items = [
+		MenuItem(
+			o.value,
+			value=o,
+			preview_action=lambda x: x.value.packages_text() if x.value else None,
+		)
+		for o in options
+	]
+
 	group = MenuItemGroup(items, sort_items=True)
 	group.set_default_by_value(GfxDriver.AllOpenSource)
 
@@ -131,12 +135,12 @@ def select_driver(options: list[GfxDriver] = [], preset: GfxDriver | None = None
 	if SysInfo.has_nvidia_graphics():
 		header += tr('For the best compatibility with your Nvidia hardware, you may want to use the Nvidia proprietary driver.\n')
 
-	result = SelectionMenu[GfxDriver](
+	result = Selection[GfxDriver](
 		group,
 		header=header,
 		allow_skip=True,
 		allow_reset=True,
-		preview_orientation='right',
+		preview_location='right',
 	).show()
 
 	match result.type_:
@@ -149,19 +153,12 @@ def select_driver(options: list[GfxDriver] = [], preset: GfxDriver | None = None
 
 
 def ask_for_swap(preset: bool = True) -> bool:
-	if preset:
-		default_item = MenuItem.yes()
-	else:
-		default_item = MenuItem.no()
-
 	prompt = tr('Would you like to use swap on zram?') + '\n'
-
-	group = MenuItemGroup.yes_no()
-	group.set_focus_by_value(default_item)
 
 	result = Confirmation(
 		header=prompt,
 		allow_skip=True,
+		preset=preset,
 	).show()
 
 	match result.type_:

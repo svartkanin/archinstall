@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from enum import Enum
 from pathlib import Path
-from typing import assert_never
 
-from archinstall.lib.menu.helpers import Confirmation, Input, Loading, Notify, SelectionMenu
+from archinstall.lib.menu.helpers import Confirmation, Input, Loading, Notify, Selection
 from archinstall.lib.models.packages import Repository
 from archinstall.lib.packages.packages import list_available_packages
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
-from archinstall.tui.ui.result import ResultType as UiResultType
 
 from ..locale.utils import list_timezones
 from ..models.packages import AvailablePackage, PackageGroup
@@ -37,7 +35,7 @@ def ask_ntp(preset: bool = True) -> bool:
 	group = MenuItemGroup.yes_no()
 	group.focus_item = preset_val
 
-	result = SelectionMenu[bool](
+	result = Selection[bool](
 		group,
 		header=header,
 		allow_skip=True,
@@ -60,14 +58,14 @@ def ask_hostname(preset: str | None = None) -> str | None:
 	).show()
 
 	match result.type_:
-		case UiResultType.Skip:
+		case ResultType.Skip:
 			return preset
-		case UiResultType.Selection:
+		case ResultType.Selection:
 			hostname = result.get_value()
 			if len(hostname) < 1:
 				return None
 			return hostname
-		case UiResultType.Reset:
+		case ResultType.Reset:
 			raise ValueError('Unhandled result type')
 
 
@@ -80,11 +78,12 @@ def ask_for_a_timezone(preset: str | None = None) -> str | None:
 	group.set_selected_by_value(preset)
 	group.set_default_by_value(default)
 
-	result = SelectionMenu[str](
+	result = Selection[str](
 		group,
 		header=tr('Select timezone'),
 		allow_reset=True,
 		allow_skip=True,
+		show_frame=True,
 	).show()
 
 	match result.type_:
@@ -122,7 +121,7 @@ def select_archinstall_language(languages: list[Language], preset: Language) -> 
 	title += 'All available fonts can be found in "/usr/share/kbd/consolefonts"\n'
 	title += 'e.g. setfont LatGrkCyr-8x16 (to display latin/greek/cyrillic characters)\n'
 
-	result = SelectionMenu[Language](
+	result = Selection[Language](
 		header=title,
 		group=group,
 		allow_reset=False,
@@ -130,11 +129,11 @@ def select_archinstall_language(languages: list[Language], preset: Language) -> 
 	).show()
 
 	match result.type_:
-		case UiResultType.Skip:
+		case ResultType.Skip:
 			return preset
-		case UiResultType.Selection:
+		case ResultType.Selection:
 			return result.get_value()
-		case UiResultType.Reset:
+		case ResultType.Reset:
 			raise ValueError('Language selection not handled')
 
 
@@ -150,7 +149,7 @@ def ask_additional_packages_to_install(
 
 	packages = Loading[dict[str, AvailablePackage]](
 		header=output,
-		data_callback=lambda: list_available_packages(tuple(repositories))
+		data_callback=lambda: list_available_packages(tuple(repositories)),
 	).show()
 
 	if packages is None:
@@ -192,13 +191,13 @@ def ask_additional_packages_to_install(
 	menu_group = MenuItemGroup(items, sort_items=True)
 	menu_group.set_selected_by_value(preset_packages)
 
-	result = SelectionMenu[AvailablePackage | PackageGroup](
+	result = Selection[AvailablePackage | PackageGroup](
 		menu_group,
 		header=header,
 		allow_reset=True,
 		allow_skip=True,
 		multi=True,
-		preview_orientation='right',
+		preview_location='right',
 		show_frame=False,
 	).show()
 
@@ -212,44 +211,41 @@ def ask_additional_packages_to_install(
 			return [pkg.name for pkg in selected_pacakges]
 
 
-def add_number_of_parallel_downloads(preset: int | None = None) -> int | None:
+def add_number_of_parallel_downloads(preset: int = 1) -> int | None:
 	max_recommended = 5
 
 	header = tr('This option enables the number of parallel downloads that can occur during package downloads') + '\n'
-	header += tr('Enter the number of parallel downloads to be enabled.\n\nNote:\n')
-	header += tr(' - Maximum recommended value : {} ( Allows {} parallel downloads at a time )').format(max_recommended, max_recommended) + '\n'
-	header += tr(' - Disable/Default : 0 ( Disables parallel downloading, allows only 1 download at a time )\n')
+	header += tr(' - Maximum recommended value : {} ( Allows {} parallel downloads at a time )').format(max_recommended, max_recommended) + '\n\n'
+	header += tr('Enter the number of parallel downloads to be enabled')
 
-	def validator(s: str | None) -> str | None:
-		if s is not None:
-			try:
-				value = int(s)
-				if value >= 0:
-					return None
-			except Exception:
-				pass
+	def validator(s: str) -> str | None:
+		try:
+			value = int(s)
 
-		return tr('Invalid download number')
+			if 1 <= value <= max_recommended:
+				return None
 
-	header += tr('Enter a the number of parallel downloads to be enabled (max recommended: {})').format(max_recommended)
+			return tr('Value must be between 1 and {}').format(max_recommended)
+		except Exception:
+			return tr('Please enter a valid number')
 
 	result = Input(
 		header=header,
 		allow_skip=True,
 		allow_reset=True,
 		validator_callback=validator,
-		default_value=str(preset) if preset is not None else None,
+		default_value=str(preset),
 	).show()
+
+	downloads = 1
 
 	match result.type_:
 		case ResultType.Skip:
 			return preset
 		case ResultType.Reset:
-			return 0
+			return downloads
 		case ResultType.Selection:
-			downloads: int = int(result.get_value())
-		case _:
-			assert_never(result.type_)
+			downloads = int(result.get_value())
 
 	pacman_conf_path = Path('/etc/pacman.conf')
 	with pacman_conf_path.open() as f:
@@ -272,7 +268,7 @@ def ask_post_installation() -> PostInstallationAction:
 	items = [MenuItem(action.value, value=action) for action in PostInstallationAction]
 	group = MenuItemGroup(items)
 
-	result = SelectionMenu[PostInstallationAction](
+	result = Selection[PostInstallationAction](
 		group,
 		header=header,
 		allow_skip=False,
@@ -287,12 +283,11 @@ def ask_post_installation() -> PostInstallationAction:
 
 def ask_abort() -> None:
 	prompt = tr('Do you really want to abort?') + '\n'
-	group = MenuItemGroup.yes_no()
 
-	result = Confirmation[bool](
-		group,
+	result = Confirmation(
 		header=prompt,
 		allow_skip=False,
+		preset=False,
 	).show()
 
 	if result.item() == MenuItem.yes():

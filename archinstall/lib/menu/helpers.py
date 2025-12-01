@@ -1,5 +1,5 @@
 from collections.abc import Awaitable, Callable
-from typing import Literal, TypeVar, override
+from typing import Any, Literal, TypeVar, override
 
 from textual.validation import ValidationResult, Validator
 
@@ -20,14 +20,14 @@ from archinstall.tui.ui.result import Result, ResultType
 ValueT = TypeVar('ValueT')
 
 
-class SelectionMenu[ValueT]:
+class Selection[ValueT]:
 	def __init__(
 		self,
 		group: MenuItemGroup,
 		header: str | None = None,
 		allow_skip: bool = True,
 		allow_reset: bool = False,
-		preview_orientation: Literal['right', 'bottom'] | None = None,
+		preview_location: Literal['right', 'bottom'] | None = None,
 		multi: bool = False,
 		search_enabled: bool = False,
 		show_frame: bool = False,
@@ -36,28 +36,33 @@ class SelectionMenu[ValueT]:
 		self._group: MenuItemGroup = group
 		self._allow_skip = allow_skip
 		self._allow_reset = allow_reset
-		self._preview_orientation = preview_orientation
+		self._preview_location = preview_location
 		self._multi = multi
 		self._search_enabled = search_enabled
 		self._show_frame = show_frame
 
 	def show(self) -> Result[ValueT]:
-		result = tui.run(self)
+		result: Result[ValueT] = tui.run(self)
 		return result
 
 	async def _run(self) -> None:
-		if not self._multi:
+		if self._multi:
+			result = await SelectListScreen[ValueT](
+				self._group,
+				header=self._header,
+				allow_skip=self._allow_skip,
+				allow_reset=self._allow_reset,
+				preview_location=self._preview_location,
+				show_frame=self._show_frame,
+			).run()
+		else:
 			result = await OptionListScreen[ValueT](
 				self._group,
 				header=self._header,
 				allow_skip=self._allow_skip,
 				allow_reset=self._allow_reset,
-				preview_location=self._preview_orientation,
+				preview_location=self._preview_location,
 				show_frame=self._show_frame,
-			).run()
-		else:
-			result = await SelectListScreen[ValueT](
-				self._group, header=self._header, allow_skip=self._allow_skip, allow_reset=self._allow_reset, preview_location=self._preview_orientation
 			).run()
 
 		if result.type_ == ResultType.Reset:
@@ -72,7 +77,7 @@ class SelectionMenu[ValueT]:
 class Confirmation:
 	def __init__(
 		self,
-		header: str | None = None,
+		header: str,
 		allow_skip: bool = True,
 		allow_reset: bool = False,
 		preset: bool = False,
@@ -86,7 +91,7 @@ class Confirmation:
 		self._group.set_focus_by_value(preset)
 
 	def show(self) -> Result[bool]:
-		result = tui.run(self)
+		result: Result[bool] = tui.run(self)
 		return result
 
 	async def _run(self) -> None:
@@ -106,24 +111,21 @@ class Confirmation:
 		tui.exit(result)
 
 
-class Notify[ValueT]:
-	def __init__(
-		self,
-		header: str | None = None,
-	):
+class Notify:
+	def __init__(self, header: str):
 		self._header = header
 
-	def show(self) -> Result[ValueT]:
-		result = tui.run(self)
+	def show(self) -> Result[bool]:
+		result: Result[bool] = tui.run(self)
 		return result
 
 	async def _run(self) -> None:
 		await NotifyScreen(header=self._header).run()
-		tui.exit(True)
+		tui.exit(Result.true())
 
 
 class GenericValidator(Validator):
-	def __init__(self, validator_callback: Callable[[str | None], str | None]) -> None:
+	def __init__(self, validator_callback: Callable[[str], str | None]) -> None:
 		super().__init__()
 
 		self._validator_callback = validator_callback
@@ -147,7 +149,7 @@ class Input:
 		default_value: str | None = None,
 		allow_skip: bool = True,
 		allow_reset: bool = False,
-		validator_callback: Callable[[str | None], str | None] | None = None,
+		validator_callback: Callable[[str], str | None] | None = None,
 	):
 		self._header = header
 		self._placeholder = placeholder
@@ -157,8 +159,8 @@ class Input:
 		self._allow_reset = allow_reset
 		self._validator_callback = validator_callback
 
-	def show(self) -> Result[ValueT]:
-		result = tui.run(self)
+	def show(self) -> Result[str]:
+		result: Result[str] = tui.run(self)
 		return result
 
 	async def _run(self) -> None:
@@ -188,14 +190,14 @@ class Loading[ValueT]:
 		self,
 		header: str | None = None,
 		timer: int = 3,
-		data_callback: Callable[[], Awaitable[ValueT]] | None = None,
+		data_callback: Callable[[], Any] | None = None,
 	):
 		self._header = header
 		self._timer = timer
 		self._data_callback = data_callback
 
 	def show(self) -> ValueT | None:
-		result = tui.run(self)
+		result: Result[ValueT] = tui.run(self)
 
 		match result.type_:
 			case ResultType.Selection:
@@ -210,8 +212,11 @@ class Loading[ValueT]:
 			result = await LoadingScreen(header=self._header, data_callback=self._data_callback).run()
 			tui.exit(result)
 		else:
-			await LoadingScreen(self._timer, self._header).run()
-			tui.exit(True)
+			await LoadingScreen(
+				timer=self._timer,
+				header=self._header,
+			).run()
+			tui.exit(Result.true())
 
 
 class TableMenu[ValueT]:
@@ -220,11 +225,12 @@ class TableMenu[ValueT]:
 		header: str | None = None,
 		data: list[ValueT] | None = None,
 		data_callback: Callable[[], Awaitable[list[ValueT]]] | None = None,
+		presets: list[ValueT] | None = None,
 		allow_reset: bool = False,
 		allow_skip: bool = False,
 		loading_header: str | None = None,
 		multi: bool = False,
-		preview_orientation: str = 'right',
+		preview_orientation: str | None = None,
 	):
 		self._header = header
 		self._data = data
@@ -234,12 +240,13 @@ class TableMenu[ValueT]:
 		self._allow_reset = allow_reset
 		self._multi = multi
 		self._preview_orientation = preview_orientation
+		self._presets = presets
 
 		if self._data is None and self._data_callback is None:
 			raise ValueError('Either data or data_callback must be provided')
 
 	def show(self) -> Result[ValueT]:
-		result = tui.run(self)
+		result: Result[ValueT] = tui.run(self)
 		return result
 
 	async def _run(self) -> None:

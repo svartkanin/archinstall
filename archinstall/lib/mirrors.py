@@ -3,7 +3,7 @@ import urllib.parse
 from pathlib import Path
 from typing import override
 
-from archinstall.lib.menu.helpers import Input, Loading, SelectionMenu
+from archinstall.lib.menu.helpers import Input, Loading, Selection
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
@@ -51,17 +51,17 @@ class CustomMirrorRepositoriesList(ListManager[CustomRepository]):
 		entry: CustomRepository | None,
 		data: list[CustomRepository],
 	) -> list[CustomRepository]:
-		if action == self._actions[0]:	# add
+		if action == self._actions[0]:  # add
 			new_repo = self._add_custom_repository()
 			if new_repo is not None:
 				data = [d for d in data if d.name != new_repo.name]
 				data += [new_repo]
-		elif action == self._actions[1] and entry:	# modify repo
+		elif action == self._actions[1] and entry:  # modify repo
 			new_repo = self._add_custom_repository(entry)
 			if new_repo is not None:
 				data = [d for d in data if d.name != entry.name]
 				data += [new_repo]
-		elif action == self._actions[2] and entry:	# delete
+		elif action == self._actions[2] and entry:  # delete
 			data = [d for d in data if d != entry]
 
 		return data
@@ -69,7 +69,6 @@ class CustomMirrorRepositoriesList(ListManager[CustomRepository]):
 	def _add_custom_repository(self, preset: CustomRepository | None = None) -> CustomRepository | None:
 		edit_result = Input(
 			header=tr('Enter a respository name'),
-			placeholder=tr('Repository'),
 			allow_skip=True,
 			default_value=preset.name if preset else None,
 		).show()
@@ -82,12 +81,11 @@ class CustomMirrorRepositoriesList(ListManager[CustomRepository]):
 			case _:
 				raise ValueError('Unhandled return type')
 
-		header = f'{tr("Name")}: {name}\n\n'
-		header += tr('Enter the respository url')
+		header = f'{tr("Name")}: {name}\n'
+		prompt = f'{header}\n' + tr('Enter the repository url')
 
 		edit_result = Input(
-			header=header,
-			placeholder=tr('Url'),
+			header=prompt,
 			allow_skip=True,
 			default_value=preset.url if preset else None,
 		).show()
@@ -100,7 +98,7 @@ class CustomMirrorRepositoriesList(ListManager[CustomRepository]):
 			case _:
 				raise ValueError('Unhandled return type')
 
-		header += f'\n{tr("Url")}: {url}\n'
+		header += f'{tr("Url")}: {url}\n'
 		prompt = f'{header}\n' + tr('Select signature check')
 
 		sign_chk_items = [MenuItem(s.value, value=s.value) for s in SignCheck]
@@ -109,7 +107,7 @@ class CustomMirrorRepositoriesList(ListManager[CustomRepository]):
 		if preset is not None:
 			group.set_selected_by_value(preset.sign_check.value)
 
-		result = SelectionMenu[SignCheck](
+		result = Selection[SignCheck](
 			group,
 			header=prompt,
 			allow_skip=False,
@@ -130,7 +128,7 @@ class CustomMirrorRepositoriesList(ListManager[CustomRepository]):
 		if preset is not None:
 			group.set_selected_by_value(preset.sign_option.value)
 
-		result = SelectionMenu(
+		result = Selection(
 			group,
 			header=prompt,
 			allow_skip=False,
@@ -171,17 +169,17 @@ class CustomMirrorServersList(ListManager[CustomServer]):
 		entry: CustomServer | None,
 		data: list[CustomServer],
 	) -> list[CustomServer]:
-		if action == self._actions[0]:	# add
+		if action == self._actions[0]:  # add
 			new_server = self._add_custom_server()
 			if new_server is not None:
 				data = [d for d in data if d.url != new_server.url]
 				data += [new_server]
-		elif action == self._actions[1] and entry:	# modify repo
+		elif action == self._actions[1] and entry:  # modify repo
 			new_server = self._add_custom_server(entry)
 			if new_server is not None:
 				data = [d for d in data if d.url != entry.url]
 				data += [new_server]
-		elif action == self._actions[2] and entry:	# delete
+		elif action == self._actions[2] and entry:  # delete
 			data = [d for d in data if d != entry]
 
 		return data
@@ -189,7 +187,6 @@ class CustomMirrorServersList(ListManager[CustomServer]):
 	def _add_custom_server(self, preset: CustomServer | None = None) -> CustomServer | None:
 		edit_result = Input(
 			header=tr('Enter server url'),
-			placeholder=tr('Url'),
 			allow_skip=True,
 			default_value=preset.url if preset else None,
 		).show()
@@ -300,7 +297,7 @@ class MirrorMenu(AbstractSubMenu[MirrorConfiguration]):
 def select_mirror_regions(preset: list[MirrorRegion]) -> list[MirrorRegion]:
 	Loading[None](
 		header=tr('Loading mirror regions...'),
-		data_callback=lambda: mirror_list_handler.load_mirrors()
+		data_callback=mirror_list_handler.load_mirrors,
 	).show()
 
 	available_regions = mirror_list_handler.get_mirror_regions()
@@ -315,7 +312,7 @@ def select_mirror_regions(preset: list[MirrorRegion]) -> list[MirrorRegion]:
 
 	group.set_selected_by_value(preset_regions)
 
-	result = SelectionMenu[MirrorRegion](
+	result = Selection[MirrorRegion](
 		group,
 		header=tr('Select mirror regions to be enabled'),
 		allow_reset=True,
@@ -356,7 +353,7 @@ def select_optional_repositories(preset: list[Repository]) -> list[Repository]:
 	group = MenuItemGroup(items, sort_items=True)
 	group.set_selected_by_value(preset)
 
-	result = SelectionMenu[Repository](
+	result = Selection[Repository](
 		group,
 		header=tr('Select optional repositories to be enabled'),
 		allow_reset=True,

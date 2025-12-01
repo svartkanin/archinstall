@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, override
 
 from archinstall.default_profiles.profile import GreeterType, Profile, ProfileType, SelectResult
-from archinstall.lib.menu.helpers import SelectionMenu
+from archinstall.lib.menu.helpers import Selection
 from archinstall.lib.output import info
 from archinstall.lib.profile.profiles_handler import profile_handler
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
@@ -68,12 +68,12 @@ class DesktopProfile(Profile):
 		group = MenuItemGroup(items, sort_items=True, sort_case_sensitive=False)
 		group.set_selected_by_value(self.current_selection)
 
-		result = SelectionMenu[Profile](
+		result = Selection[Profile](
 			group,
 			multi=True,
 			allow_reset=True,
 			allow_skip=True,
-			preview_orientation='right',
+			preview_location='right',
 		).show()
 
 		match result.type_:

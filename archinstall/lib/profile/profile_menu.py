@@ -3,11 +3,10 @@ from __future__ import annotations
 from typing import override
 
 from archinstall.default_profiles.profile import GreeterType, Profile
+from archinstall.lib.menu.helpers import Confirmation, Selection
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.curses_menu import SelectMenu
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
-from archinstall.tui.result import ResultType
-from archinstall.tui.types import Alignment, FrameProperties, Orientation
+from archinstall.tui.ui.result import ResultType
 
 from ..hardware import GfxDriver
 from ..interactions.system_conf import select_driver
@@ -103,18 +102,11 @@ class ProfileMenu(AbstractSubMenu[ProfileConfiguration]):
 					header = tr('The proprietary Nvidia driver is not supported by Sway.') + '\n'
 					header += tr('It is likely that you will run into issues, are you okay with that?') + '\n'
 
-					group = MenuItemGroup.yes_no()
-					group.focus_item = MenuItem.no()
-					group.default_item = MenuItem.no()
-
-					result = SelectMenu[bool](
-						group,
+					result = Confirmation(
 						header=header,
 						allow_skip=False,
-						columns=2,
-						orientation=Orientation.HORIZONTAL,
-						alignment=Alignment.CENTER,
-					).run()
+						preset=False,
+					).show()
 
 					if result.item() == MenuItem.no():
 						return preset
@@ -168,12 +160,11 @@ def select_greeter(
 
 		group.set_default_by_value(default)
 
-		result = SelectMenu[GreeterType](
+		result = Selection[GreeterType](
 			group,
+			header=tr('Select which greeter to install'),
 			allow_skip=True,
-			frame=FrameProperties.min(tr('Greeter')),
-			alignment=Alignment.CENTER,
-		).run()
+		).show()
 
 		match result.type_:
 			case ResultType.Skip:
@@ -202,14 +193,12 @@ def select_profile(
 	group = MenuItemGroup(items, sort_items=True)
 	group.set_selected_by_value(current_profile)
 
-	result = SelectMenu[Profile](
+	result = Selection[Profile](
 		group,
 		header=header,
 		allow_reset=allow_reset,
 		allow_skip=True,
-		alignment=Alignment.CENTER,
-		frame=FrameProperties.min(tr('Main profile')),
-	).run()
+	).show()
 
 	match result.type_:
 		case ResultType.Reset:

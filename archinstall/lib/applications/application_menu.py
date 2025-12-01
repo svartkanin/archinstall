@@ -1,7 +1,7 @@
 from typing import override
 
 from archinstall.lib.menu.abstract_menu import AbstractSubMenu
-from archinstall.lib.menu.helpers import Confirmation, SelectionMenu
+from archinstall.lib.menu.helpers import Confirmation, Selection
 from archinstall.lib.models.application import ApplicationConfiguration, Audio, AudioConfiguration, BluetoothConfiguration
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
@@ -74,8 +74,7 @@ def select_bluetooth(preset: BluetoothConfiguration | None) -> BluetoothConfigur
 
 	header = tr('Would you like to configure Bluetooth?') + '\n'
 
-	result = Confirmation[bool](
-		group,
+	result = Confirmation(
 		header=header,
 		allow_skip=True,
 	).show()
@@ -97,7 +96,7 @@ def select_audio(preset: AudioConfiguration | None = None) -> AudioConfiguration
 	if preset:
 		group.set_focus_by_value(preset.audio)
 
-	result = SelectionMenu[Audio](
+	result = Selection[Audio](
 		group,
 		header=tr('Select audio configuration'),
 		allow_skip=True,

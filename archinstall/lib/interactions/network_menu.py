@@ -3,7 +3,7 @@ from __future__ import annotations
 import ipaddress
 from typing import assert_never, override
 
-from archinstall.lib.menu.helpers import Input, SelectionMenu
+from archinstall.lib.menu.helpers import Input, Selection
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
@@ -34,14 +34,14 @@ class ManualNetworkConfig(ListManager[Nic]):
 
 	@override
 	def handle_action(self, action: str, entry: Nic | None, data: list[Nic]) -> list[Nic]:
-		if action == self._actions[0]:	# add
+		if action == self._actions[0]:  # add
 			iface = self._select_iface(data)
 			if iface:
 				nic = Nic(iface=iface)
 				nic = self._edit_iface(nic)
 				data += [nic]
 		elif entry:
-			if action == self._actions[1]:	# edit interface
+			if action == self._actions[1]:  # edit interface
 				data = [d for d in data if d.iface != entry.iface]
 				data.append(self._edit_iface(entry))
 			elif action == self._actions[2]:  # delete
@@ -63,11 +63,10 @@ class ManualNetworkConfig(ListManager[Nic]):
 		items = [MenuItem(i, value=i) for i in available]
 		group = MenuItemGroup(items, sort_items=True)
 
-		result = SelectionMenu[str](
+		result = Selection[str](
 			group,
 			header=tr('Select an interface'),
 			allow_skip=True,
-			show_frame=False,
 		).show()
 
 		match result.type_:
@@ -78,14 +77,7 @@ class ManualNetworkConfig(ListManager[Nic]):
 			case ResultType.Reset:
 				raise ValueError('Unhandled result type')
 
-	def _get_ip_address(
-		self,
-		header: str,
-		allow_skip: bool,
-		multi: bool,
-		preset: str | None = None,
-		allow_empty: bool = False
-	) -> str | None:
+	def _get_ip_address(self, header: str, allow_skip: bool, multi: bool, preset: str | None = None, allow_empty: bool = False) -> str | None:
 		def validator(ip: str | None) -> str | None:
 			failure = tr('You need to enter a valid IP in IP-config mode')
 
@@ -132,7 +124,7 @@ class ManualNetworkConfig(ListManager[Nic]):
 		group = MenuItemGroup(items, sort_items=True)
 		group.set_default_by_value(default_mode)
 
-		result = SelectionMenu[str](
+		result = Selection[str](
 			group,
 			header=header,
 			allow_skip=False,
@@ -162,13 +154,7 @@ class ManualNetworkConfig(ListManager[Nic]):
 				display_dns = None
 
 			header = tr('Enter your DNS servers with space separated (leave blank for none)') + '\n'
-			dns_servers = self._get_ip_address(
-				header,
-				True,
-				True,
-				display_dns,
-				allow_empty=True
-			)
+			dns_servers = self._get_ip_address(header, True, True, display_dns, allow_empty=True)
 
 			dns = []
 			if dns_servers is not None:
@@ -191,7 +177,7 @@ def ask_to_configure_network(preset: NetworkConfiguration | None) -> NetworkConf
 	if preset:
 		group.set_selected_by_value(preset.type)
 
-	result = SelectionMenu[NicType](
+	result = Selection[NicType](
 		group,
 		header=tr('Choose network configuration'),
 		allow_reset=True,

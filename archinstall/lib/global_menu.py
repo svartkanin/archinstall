@@ -137,7 +137,7 @@ class GlobalMenu(AbstractMenu[None]):
 			MenuItem(
 				text=tr('Parallel Downloads'),
 				action=add_number_of_parallel_downloads,
-				value=0,
+				value=1,
 				preview_action=self._prev_parallel_dw,
 				key='parallel_downloads',
 			),
@@ -522,10 +522,10 @@ class GlobalMenu(AbstractMenu[None]):
 
 		return packages
 
-	def _mirror_configuration(self, preset: MirrorConfiguration | None = None) -> MirrorConfiguration:
+	def _mirror_configuration(self, preset: MirrorConfiguration | None = None) -> MirrorConfiguration | None:
 		mirror_configuration = MirrorMenu(preset=preset).run()
 
-		if mirror_configuration.optional_repositories:
+		if mirror_configuration and mirror_configuration.optional_repositories:
 			# reset the package list cache in case the repository selection has changed
 			list_available_packages.cache_clear()
 

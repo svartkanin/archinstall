@@ -14,48 +14,48 @@ def get_password(
 	preset: str | None = None,
 	skip_confirmation: bool = False,
 ) -> Password | None:
-	failure: str | None = None
-
 	while True:
-		user_hdr = None
-		if failure is not None:
-			user_hdr = f'{header}\n{failure}\n'
-		elif header is not None:
-			user_hdr = header
-
 		result = Input(
-			header=user_hdr,
+			header=header,
 			allow_skip=allow_skip,
 			default_value=preset,
 			password=True,
 		).show()
 
-		if allow_skip:
-			if not result.get_value():
+		if result.type_ == ResultType.Skip:
+			if allow_skip:
 				return None
+			else:
+				continue
+		elif result.type_ == ResultType.Selection:
+			if not result.get_value():
+				if allow_skip:
+					return None
+				else:
+					continue
 
 		password = Password(plaintext=result.get_value())
+		break
 
-		if skip_confirmation:
-			return password
+	if skip_confirmation:
+		return password
 
-		if header is not None:
-			confirmation_header = f'{header}{tr("Password")}: {password.hidden()}\n'
-		else:
-			confirmation_header = f'{tr("Password")}: {password.hidden()}\n'
+	confirmation_header = f'{tr("Password")}: {password.hidden()}\n\n'
+	confirmation_header += tr('Confirm password')
 
-		confirmation_header += '\n' + tr('Confirm password')
+	def _validate(value: str) -> str | None:
+		if value != password._plaintext:
+			return tr('The password did not match, please try again')
+		return None
 
-		result = Input(
-			header=confirmation_header,
-			allow_skip=False,
-			password=True,
-		).show()
+	_ = Input(
+		header=confirmation_header,
+		allow_skip=False,
+		password=True,
+		validator_callback=_validate,
+	).show()
 
-		if password._plaintext == result.get_value():
-			return password
-
-		failure = tr('The confirmation password did not match, please try again')
+	return password
 
 
 def prompt_dir(

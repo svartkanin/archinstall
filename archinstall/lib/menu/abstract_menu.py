@@ -3,14 +3,14 @@ from __future__ import annotations
 from types import TracebackType
 from typing import Any, Self
 
-from archinstall.lib.menu.helpers import SelectionMenu
+from archinstall.lib.menu.helpers import Selection
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.curses_menu import Tui
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.types import Chars
 from archinstall.tui.ui.result import ResultType
 
-from ..output import debug, error
+from ..output import error
 
 CONFIG_KEY = '__config__'
 
@@ -99,18 +99,19 @@ class AbstractMenu[ValueT]:
 		self._sync_from_config()
 
 		while True:
-			result = SelectionMenu[ValueT](
+			result = Selection[ValueT](
 				group=self._menu_item_group,
 				header=additional_title,
 				allow_skip=False,
 				allow_reset=self._allow_reset,
-				preview_orientation='right',
+				preview_location='right',
 				show_frame=False,
 			).show()
 
 			match result.type_:
 				case ResultType.Selection:
 					item: MenuItem = result.item()
+					self._menu_item_group.focus_item = item
 
 					if item.action is None:
 						if not self._is_config_valid():

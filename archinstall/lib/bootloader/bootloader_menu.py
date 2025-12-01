@@ -1,11 +1,10 @@
 import textwrap
 from typing import override
 
+from archinstall.lib.menu.helpers import Confirmation, Selection
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.curses_menu import SelectMenu
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
-from archinstall.tui.result import ResultType
-from archinstall.tui.types import Alignment, FrameProperties, Orientation
+from archinstall.tui.ui.result import ResultType
 
 from ..args import arch_config_handler
 from ..hardware import SysInfo
@@ -121,17 +120,7 @@ class BootloaderMenu(AbstractSubMenu[BootloaderConfiguration]):
 	def _select_uki(self, preset: bool) -> bool:
 		prompt = tr('Would you like to use unified kernel images?') + '\n'
 
-		group = MenuItemGroup.yes_no()
-		group.set_focus_by_value(preset)
-
-		result = SelectMenu[bool](
-			group,
-			header=prompt,
-			columns=2,
-			orientation=Orientation.HORIZONTAL,
-			alignment=Alignment.CENTER,
-			allow_skip=True,
-		).run()
+		result = Confirmation(header=prompt, allow_skip=True, preset=preset).show()
 
 		match result.type_:
 			case ResultType.Skip:
@@ -168,14 +157,11 @@ class BootloaderMenu(AbstractSubMenu[BootloaderConfiguration]):
 		group = MenuItemGroup.yes_no()
 		group.set_focus_by_value(preset)
 
-		result = SelectMenu[bool](
+		result = Selection[bool](
 			group,
 			header=prompt,
-			columns=2,
-			orientation=Orientation.HORIZONTAL,
-			alignment=Alignment.CENTER,
 			allow_skip=True,
-		).run()
+		).show()
 
 		match result.type_:
 			case ResultType.Skip:
@@ -212,13 +198,11 @@ def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
 	group.set_default_by_value(default)
 	group.set_focus_by_value(preset)
 
-	result = SelectMenu[Bootloader](
+	result = Selection[Bootloader](
 		group,
 		header=header,
-		alignment=Alignment.CENTER,
-		frame=FrameProperties.min(tr('Bootloader')),
 		allow_skip=True,
-	).run()
+	).show()
 
 	match result.type_:
 		case ResultType.Skip:

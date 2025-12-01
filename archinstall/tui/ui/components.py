@@ -11,6 +11,7 @@ from textual.events import Key
 from textual.screen import Screen
 from textual.validation import Validator
 from textual.widgets import Button, DataTable, Footer, Input, LoadingIndicator, OptionList, Rule, SelectionList, Static
+from textual.widgets._data_table import RowKey
 from textual.widgets.option_list import Option
 from textual.widgets.selection_list import Selection
 from textual.worker import WorkerCancelled
@@ -75,7 +76,7 @@ class LoadingScreen(BaseScreen[None]):
 	def __init__(
 		self,
 		timer: int = 3,
-		data_callback: Callable[[], Awaitable[list[ValueT]]] | None = None,
+		data_callback: Callable[[], Any] | None = None,
 		header: str | None = None,
 	):
 		super().__init__()
@@ -100,7 +101,7 @@ class LoadingScreen(BaseScreen[None]):
 		yield Footer()
 
 	# def on_mount(self) -> None:
-	#	self.set_timer(self._timer, self.action_pop_screen)
+	# self.set_timer(self._timer, self.action_pop_screen)
 
 	def on_mount(self) -> None:
 		if self._data_callback:
@@ -119,6 +120,10 @@ class LoadingScreen(BaseScreen[None]):
 
 
 class OptionListScreen(BaseScreen[ValueT]):
+	"""
+	List single selection menu
+	"""
+
 	BINDINGS: ClassVar = [
 		Binding('j', 'cursor_down', 'Down', show=False),
 		Binding('k', 'cursor_up', 'Up', show=False),
@@ -192,7 +197,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 		allow_skip: bool = False,
 		allow_reset: bool = False,
 		preview_location: Literal['right', 'bottom'] | None = None,
-		show_frame: bool = True,
+		show_frame: bool = False,
 	):
 		super().__init__(allow_skip, allow_reset)
 		self._group = group
@@ -243,7 +248,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 						yield option_list
 			else:
 				Container = Horizontal if self._preview_location == 'right' else Vertical
-				rule_orientation = 'vertical' if self._preview_location == 'right' else 'horizontal'
+				rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
 
 				with Container():
 					yield option_list
@@ -252,19 +257,27 @@ class OptionListScreen(BaseScreen[ValueT]):
 
 		yield Footer()
 
+	def on_mount(self) -> None:
+		focused_item = self._group.focus_item
+		if focused_item:
+			self._set_preview(focused_item.get_id())
+
 	def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
 		selected_option = event.option
-		item = self._group.find_by_id(selected_option.id)
-		_ = self.dismiss(Result(ResultType.Selection, _item=item))
+		if selected_option.id is not None:
+			item = self._group.find_by_id(selected_option.id)
+			_ = self.dismiss(Result(ResultType.Selection, _item=item))
 
 	def on_option_list_option_highlighted(self, event: OptionList.OptionHighlighted) -> None:
+		if event.option.id:
+			self._set_preview(event.option.id)
+
+	def _set_preview(self, item_id: str) -> None:
 		if self._preview_location is None:
 			return None
 
 		preview_widget = self.query_one('#preview_content', Static)
-		highlighted_id = event.option.id
-
-		item = self._group.find_by_id(highlighted_id)
+		item = self._group.find_by_id(item_id)
 
 		if item.preview_action is not None:
 			maybe_preview = item.preview_action(item)
@@ -276,6 +289,10 @@ class OptionListScreen(BaseScreen[ValueT]):
 
 
 class SelectListScreen(BaseScreen[ValueT]):
+	"""
+	Multi selection menu
+	"""
+
 	BINDINGS: ClassVar = [
 		Binding('j', 'cursor_down', 'Down', show=False),
 		Binding('k', 'cursor_up', 'Up', show=False),
@@ -348,11 +365,13 @@ class SelectListScreen(BaseScreen[ValueT]):
 		allow_skip: bool = False,
 		allow_reset: bool = False,
 		preview_location: Literal['right', 'bottom'] | None = None,
+		show_frame: bool = False,
 	):
 		super().__init__(allow_skip, allow_reset)
 		self._group = group
 		self._header = header
 		self._preview_location = preview_location
+		self._show_frame = show_frame
 
 	def action_cursor_down(self) -> None:
 		select_list = self.query_one('#select_list_widget', OptionList)
@@ -391,16 +410,21 @@ class SelectListScreen(BaseScreen[ValueT]):
 			if self._header:
 				yield Static(self._header, classes='header', id='header')
 
+			selection_list = SelectionList[MenuItem](*selections, id='select_list_widget')
+
+			if not self._show_frame:
+				selection_list.classes = 'no-border'
+
 			if self._preview_location is None:
 				with Center():
 					with Vertical(classes='list-container'):
-						yield SelectionList[ValueT](*selections, id='select_list_widget')
+						yield selection_list
 			else:
 				Container = Horizontal if self._preview_location == 'right' else Vertical
-				rule_orientation = 'vertical' if self._preview_location == 'right' else 'horizontal'
+				rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
 
 				with Container():
-					yield SelectionList[ValueT](*selections, id='select_list_widget')
+					yield selection_list
 					yield Rule(orientation=rule_orientation)
 					yield Static('', id='preview_content')
 
@@ -408,16 +432,17 @@ class SelectListScreen(BaseScreen[ValueT]):
 
 	def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
 		selected_option = event.option
-		item = self._group.find_by_id(selected_option.id)
-		_ = self.dismiss(Result(ResultType.Selection, _item=item))
+		if selected_option.id:
+			item = self._group.find_by_id(selected_option.id)
+			_ = self.dismiss(Result(ResultType.Selection, _item=item))
 
 	def on_selection_list_selection_highlighted(self, event: SelectionList.SelectionHighlighted[ValueT]) -> None:
 		if self._preview_location is None:
 			return None
 
 		index = event.selection_index
-		selection: Selection[ValueT] = self.query_one(SelectionList).get_option_at_index(index)
-		item: MenuItem = selection.value  # pyright: ignore[reportAssignmentType]
+		selection: Selection[MenuItem] = self.query_one(SelectionList).get_option_at_index(index)
+		item: MenuItem = selection.value
 
 		preview_widget = self.query_one('#preview_content', Static)
 
@@ -604,7 +629,7 @@ class InputScreen(BaseScreen[str]):
 
 	def __init__(
 		self,
-		header: str,
+		header: str | None = None,
 		placeholder: str | None = None,
 		password: bool = False,
 		default_value: str | None = None,
@@ -718,8 +743,8 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		self._loading_header = loading_header
 		self._multi = multi
 
-		self._selected_keys: set[int] = set()
-		self._current_row_key = None
+		self._selected_keys: set[RowKey] = set()
+		self._current_row_key: RowKey | None = None
 
 		if self._data is None and self._data_callback is None:
 			raise ValueError('Either data or data_callback must be provided')
@@ -793,7 +818,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		table.add_columns(*cols)
 
 		for d in data:
-			row_values = list(d.table_data().values())	# type: ignore[attr-defined]
+			row_values = list(d.table_data().values())  # type: ignore[attr-defined]
 
 			if self._multi:
 				row_values.insert(0, ' ')
@@ -831,12 +856,26 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 	def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
 		if self._multi:
 			if len(self._selected_keys) == 0:
-				_ = self.dismiss(Result(ResultType.Selection, _data=[event.row_key.value]))
+				_ = self.dismiss(
+					Result[ValueT](
+						ResultType.Selection,
+						_data=[event.row_key.value],  # type: ignore[list-item]
+					)
+				)
 			else:
-				data = [row_key.value for row_key in self._selected_keys]  # type: ignore[unused-awaitable]
-				_ = self.dismiss(Result(ResultType.Selection, _data=data))
+				_ = self.dismiss(
+					Result(
+						ResultType.Selection,
+						_data=[row_key.value for row_key in self._selected_keys],  # type: ignore[misc]
+					)
+				)
 		else:
-			_ = self.dismiss(Result(ResultType.Selection, _data=event.row_key.value))
+			_ = self.dismiss(
+				Result[ValueT](
+					ResultType.Selection,
+					_data=event.row_key.value,  # type: ignore[arg-type]
+				)
+			)
 
 
 class _AppInstance(App[ValueT]):
@@ -886,9 +925,9 @@ class _AppInstance(App[ValueT]):
 		from textual.widgets import HelpPanel
 
 		if self.screen.query('HelpPanel'):
-			self.screen.query('HelpPanel').remove()
+			_ = self.screen.query('HelpPanel').remove()
 		else:
-			self.screen.mount(HelpPanel())
+			_ = self.screen.mount(HelpPanel())
 
 	def on_mount(self) -> None:
 		self._run_worker()
@@ -896,13 +935,13 @@ class _AppInstance(App[ValueT]):
 	@work
 	async def _run_worker(self) -> None:
 		try:
-			await self._main._run()  # type: ignore[unreachable]
+			await self._main._run()
 		except WorkerCancelled:
 			debug('Worker was cancelled')
 		except Exception as err:
 			debug(f'Error while running main app: {err}')
 			# this will terminate the textual app and return the exception
-			self.exit(err)
+			self.exit(err)  # type: ignore[arg-type]
 
 	@work
 	async def _show_async(self, screen: Screen[Result[ValueT]]) -> Result[ValueT]:
@@ -929,7 +968,7 @@ class TApp:
 
 	def run(self, main: Any) -> Result[ValueT]:
 		TApp.app = _AppInstance(main)
-		result = TApp.app.run()
+		result: Result[ValueT] | Exception | None = TApp.app.run()
 
 		if isinstance(result, Exception):
 			raise result
