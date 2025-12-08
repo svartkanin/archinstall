@@ -78,6 +78,7 @@ def select_locale_lang(preset: str | None = None) -> str | None:
 		header=tr('Locale language'),
 		group=group,
 		show_frame=True,
+		enable_filter=True,
 	).show()
 
 	match result.type_:
@@ -97,7 +98,10 @@ def select_locale_enc(preset: str | None = None) -> str | None:
 	group = MenuItemGroup(items, sort_items=True)
 	group.set_focus_by_value(preset)
 
-	result = Selection[str](header=tr('Locale encoding'), group=group).show()
+	result = Selection[str](
+		header=tr('Locale encoding'),
+		group=group,
+	).show()
 
 	match result.type_:
 		case ResultType.Selection:
@@ -128,6 +132,7 @@ def select_kb_layout(preset: str | None = None) -> str | None:
 		header=tr('Keyboard layout'),
 		group=group,
 		show_frame=True,
+		enable_filter=True,
 	).show()
 
 	match result.type_:

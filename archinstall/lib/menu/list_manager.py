@@ -70,7 +70,7 @@ class ListManager[ValueT]:
 			result = Selection[ValueT | str](
 				group,
 				header=prompt,
-				search_enabled=False,
+				enable_filter=False,
 				allow_skip=False,
 				show_frame=False,
 			).show()
@@ -110,7 +110,7 @@ class ListManager[ValueT]:
 		result = Selection[str](
 			group,
 			header=header,
-			search_enabled=False,
+			enable_filter=False,
 			allow_skip=False,
 			show_frame=False,
 		).show()

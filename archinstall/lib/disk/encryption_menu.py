@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import override
 
-from archinstall.lib.menu.helpers import Input, Selection, TableMenu
+from archinstall.lib.menu.helpers import Input, Selection, Table
 from archinstall.lib.menu.menu_helper import MenuHelper
 from archinstall.lib.models.device import (
 	DeviceModification,
@@ -284,12 +284,11 @@ def select_partitions_to_encrypt(
 	avail_partitions = [p for p in partitions if not p.exists()]
 
 	if avail_partitions:
-		result = TableMenu[PartitionModification](
+		result = Table[PartitionModification](
 			header=tr('Select disks for the installation'),
 			data=avail_partitions,
 			allow_skip=True,
 			multi=True,
-			preview_orientation='bottom',
 		).show()
 
 		match result.type_:
@@ -311,12 +310,11 @@ def select_lvm_vols_to_encrypt(
 	volumes: list[LvmVolume] = lvm_config.get_all_volumes()
 
 	if volumes:
-		result = TableMenu[LvmVolume](
+		result = Table[LvmVolume](
 			header=tr('Select disks for the installation'),
 			data=volumes,
 			allow_skip=True,
 			multi=True,
-			preview_orientation='bottom',
 		).show()
 
 		match result.type_:

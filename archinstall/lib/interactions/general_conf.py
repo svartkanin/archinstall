@@ -12,7 +12,7 @@ from archinstall.tui.ui.result import ResultType
 
 from ..locale.utils import list_timezones
 from ..models.packages import AvailablePackage, PackageGroup
-from ..output import warn
+from ..output import debug, warn
 from ..translationhandler import Language
 
 
@@ -147,12 +147,18 @@ def ask_additional_packages_to_install(
 	output = tr('Repositories: {}').format(respos_text) + '\n'
 	output += tr('Loading packages...')
 
-	packages = Loading[dict[str, AvailablePackage]](
+	result = Loading[dict[str, AvailablePackage]](
 		header=output,
 		data_callback=lambda: list_available_packages(tuple(repositories)),
 	).show()
 
-	if packages is None:
+	if result.type_ != ResultType.Selection:
+		debug('Error while loading packages')
+		return preset
+
+	packages = result.get_value()
+
+	if not packages:
 		Notify(tr('No packages found')).show()
 		return []
 
@@ -199,6 +205,7 @@ def ask_additional_packages_to_install(
 		multi=True,
 		preview_location='right',
 		show_frame=False,
+		enable_filter=True,
 	).show()
 
 	match result.type_:

@@ -129,7 +129,7 @@ class WifiHandler:
 		result = await TableSelectionScreen[WifiNetwork](
 			header=tr('Select wifi network to connect to'),
 			loading_header=tr('Scanning wifi networks...'),
-			data_callback=get_wifi_networks,
+			group_callback=get_wifi_networks,
 			allow_skip=True,
 			allow_reset=True,
 		).run()

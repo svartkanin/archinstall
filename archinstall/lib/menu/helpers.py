@@ -29,7 +29,7 @@ class Selection[ValueT]:
 		allow_reset: bool = False,
 		preview_location: Literal['right', 'bottom'] | None = None,
 		multi: bool = False,
-		search_enabled: bool = False,
+		enable_filter: bool = False,
 		show_frame: bool = False,
 	):
 		self._header = header
@@ -38,7 +38,7 @@ class Selection[ValueT]:
 		self._allow_reset = allow_reset
 		self._preview_location = preview_location
 		self._multi = multi
-		self._search_enabled = search_enabled
+		self._enable_filter = enable_filter
 		self._show_frame = show_frame
 
 	def show(self) -> Result[ValueT]:
@@ -54,6 +54,7 @@ class Selection[ValueT]:
 				allow_reset=self._allow_reset,
 				preview_location=self._preview_location,
 				show_frame=self._show_frame,
+				enable_filter=self._enable_filter,
 			).run()
 		else:
 			result = await OptionListScreen[ValueT](
@@ -63,6 +64,7 @@ class Selection[ValueT]:
 				allow_reset=self._allow_reset,
 				preview_location=self._preview_location,
 				show_frame=self._show_frame,
+				enable_filter=self._enable_filter,
 			).run()
 
 		if result.type_ == ResultType.Reset:
@@ -196,20 +198,16 @@ class Loading[ValueT]:
 		self._timer = timer
 		self._data_callback = data_callback
 
-	def show(self) -> ValueT | None:
+	def show(self) -> Result[ValueT]:
 		result: Result[ValueT] = tui.run(self)
-
-		match result.type_:
-			case ResultType.Selection:
-				if result.has_value() is False:
-					return None
-				return result.get_value()
-			case _:
-				return None
+		return result
 
 	async def _run(self) -> None:
 		if self._data_callback:
-			result = await LoadingScreen(header=self._header, data_callback=self._data_callback).run()
+			result = await LoadingScreen(
+				header=self._header,
+				data_callback=self._data_callback,
+			).run()
 			tui.exit(result)
 		else:
 			await LoadingScreen(
@@ -219,18 +217,19 @@ class Loading[ValueT]:
 			tui.exit(Result.true())
 
 
-class TableMenu[ValueT]:
+class Table[ValueT]:
 	def __init__(
 		self,
 		header: str | None = None,
-		data: list[ValueT] | None = None,
-		data_callback: Callable[[], Awaitable[list[ValueT]]] | None = None,
+		data: MenuItemGroup | None = None,
+		data_callback: Callable[[], Awaitable[MenuItemGroup]] | None = None,
 		presets: list[ValueT] | None = None,
 		allow_reset: bool = False,
 		allow_skip: bool = False,
 		loading_header: str | None = None,
 		multi: bool = False,
-		preview_orientation: str | None = None,
+		preview_header: str | None = None,
+		preview_callback: Callable[[ValueT], str | None] | None = None,
 	):
 		self._header = header
 		self._data = data
@@ -239,8 +238,9 @@ class TableMenu[ValueT]:
 		self._allow_skip = allow_skip
 		self._allow_reset = allow_reset
 		self._multi = multi
-		self._preview_orientation = preview_orientation
 		self._presets = presets
+		self._preview_header = preview_header
+		self._preview_callback = preview_callback
 
 		if self._data is None and self._data_callback is None:
 			raise ValueError('Either data or data_callback must be provided')
@@ -258,6 +258,8 @@ class TableMenu[ValueT]:
 			allow_reset=self._allow_reset,
 			loading_header=self._loading_header,
 			multi=self._multi,
+			preview_header=self._preview_header,
+			preview_callback=self._preview_callback,
 		).run()
 
 		if result.type_ == ResultType.Reset:

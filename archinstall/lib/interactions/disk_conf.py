@@ -3,7 +3,7 @@ from pathlib import Path
 from archinstall.lib.args import arch_config_handler
 from archinstall.lib.disk.device_handler import device_handler
 from archinstall.lib.disk.partitioning_menu import manual_partitioning
-from archinstall.lib.menu.helpers import Confirmation, Notify, Selection, TableMenu
+from archinstall.lib.menu.helpers import Confirmation, Notify, Selection, Table
 from archinstall.lib.models.device import (
 	BDevice,
 	BtrfsMountOption,
@@ -36,8 +36,7 @@ from ..utils.util import prompt_dir
 
 
 def select_devices(preset: list[BDevice] | None = []) -> list[BDevice]:
-	def _preview_device_selection(item: MenuItem) -> str | None:
-		device = item.get_value()
+	def _preview_device_selection(device: _DeviceInfo) -> str | None:
 		dev = device_handler.get_device(device.path)
 
 		if dev and dev.partition_infos:
@@ -48,16 +47,18 @@ def select_devices(preset: list[BDevice] | None = []) -> list[BDevice]:
 		preset = []
 
 	devices = device_handler.devices
+
 	options = [d.device_info for d in devices]
 	presets = [p.device_info for p in preset]
 
-	result = TableMenu[_DeviceInfo](
+	result = Table[_DeviceInfo](
 		header=tr('Select disks for the installation'),
 		data=options,
 		presets=presets,
 		allow_skip=True,
 		multi=True,
-		preview_orientation='bottom',
+		preview_header=tr('Partitions'),
+		preview_callback=_preview_device_selection,
 	).show()
 
 	match result.type_:

@@ -100,9 +100,6 @@ class LoadingScreen(BaseScreen[None]):
 
 		yield Footer()
 
-	# def on_mount(self) -> None:
-	# self.set_timer(self._timer, self.action_pop_screen)
-
 	def on_mount(self) -> None:
 		if self._data_callback:
 			self._exec_callback()
@@ -127,6 +124,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 	BINDINGS: ClassVar = [
 		Binding('j', 'cursor_down', 'Down', show=False),
 		Binding('k', 'cursor_up', 'Up', show=False),
+		Binding('/', 'search', 'Search', show=False),
 	]
 
 	CSS = """
@@ -198,12 +196,16 @@ class OptionListScreen(BaseScreen[ValueT]):
 		allow_reset: bool = False,
 		preview_location: Literal['right', 'bottom'] | None = None,
 		show_frame: bool = False,
+		enable_filter: bool = False,
 	):
 		super().__init__(allow_skip, allow_reset)
 		self._group = group
 		self._header = header
 		self._preview_location = preview_location
 		self._show_frame = show_frame
+		self._filter = enable_filter
+
+		self._options = self._get_options()
 
 	def action_cursor_down(self) -> None:
 		option_list = self.query_one('#option_list_widget', OptionList)
@@ -212,6 +214,25 @@ class OptionListScreen(BaseScreen[ValueT]):
 	def action_cursor_up(self) -> None:
 		option_list = self.query_one('#option_list_widget', OptionList)
 		option_list.action_cursor_up()
+
+	def action_search(self) -> None:
+		if self._filter:
+			self._handle_search_action()
+
+	@override
+	def action_cancel_operation(self) -> None:
+		if self._filter and self.query_one(Input).has_focus:
+			self._handle_search_action()
+		else:
+			super().action_cancel_operation()
+
+	def _handle_search_action(self) -> None:
+		search_input = self.query_one(Input)
+
+		if search_input.has_focus:
+			self.query_one(OptionList).focus()
+		else:
+			search_input.focus()
 
 	async def run(self) -> Result[ValueT]:
 		assert TApp.app
@@ -230,14 +251,11 @@ class OptionListScreen(BaseScreen[ValueT]):
 	def compose(self) -> ComposeResult:
 		yield from self._compose_header()
 
-		options = self._get_options()
-
 		with Vertical(classes='content-container'):
 			if self._header:
 				yield Static(self._header, classes='header', id='header')
 
-			option_list = OptionList(*options, id='option_list_widget')
-			option_list.highlighted = self._group.get_focused_index()
+			option_list = OptionList(id='option_list_widget')
 
 			if not self._show_frame:
 				option_list.classes = 'no-border'
@@ -255,12 +273,29 @@ class OptionListScreen(BaseScreen[ValueT]):
 					yield Rule(orientation=rule_orientation)
 					yield Static('', id='preview_content')
 
+		if self._filter:
+			yield Input(placeholder='/filter', id='filter-input')
+
 		yield Footer()
 
 	def on_mount(self) -> None:
-		focused_item = self._group.focus_item
-		if focused_item:
-			self._set_preview(focused_item.get_id())
+		self._update_options(self._options)
+
+	def on_input_changed(self, event: Input.Changed) -> None:
+		search_term = event.value.lower()
+		self._group.set_filter_pattern(search_term)
+		filtered_options = self._get_options()
+		self._update_options(filtered_options)
+
+	def _update_options(self, options: list[Option]) -> None:
+		option_list = self.query_one(OptionList)
+		option_list.clear_options()
+		option_list.add_options(options)
+
+		option_list.highlighted = self._group.get_focused_index()
+
+		if focus_item := self._group.focus_item:
+			self._set_preview(focus_item.get_id())
 
 	def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
 		selected_option = event.option
@@ -296,6 +331,8 @@ class SelectListScreen(BaseScreen[ValueT]):
 	BINDINGS: ClassVar = [
 		Binding('j', 'cursor_down', 'Down', show=False),
 		Binding('k', 'cursor_up', 'Up', show=False),
+		Binding('/', 'search', 'Search', show=False),
+		Binding('enter', '', 'Search', show=False),
 	]
 
 	CSS = """
@@ -366,12 +403,17 @@ class SelectListScreen(BaseScreen[ValueT]):
 		allow_reset: bool = False,
 		preview_location: Literal['right', 'bottom'] | None = None,
 		show_frame: bool = False,
+		enable_filter: bool = False,
 	):
 		super().__init__(allow_skip, allow_reset)
 		self._group = group
 		self._header = header
 		self._preview_location = preview_location
 		self._show_frame = show_frame
+		self._filter = enable_filter
+
+		self._selected_items: list[MenuItem] = self._group.selected_items
+		self._options = self._get_selections()
 
 	def action_cursor_down(self) -> None:
 		select_list = self.query_one('#select_list_widget', OptionList)
@@ -381,10 +423,24 @@ class SelectListScreen(BaseScreen[ValueT]):
 		select_list = self.query_one('#select_list_widget', OptionList)
 		select_list.action_cursor_up()
 
-	def on_key(self, event: Key) -> None:
-		if event.key == 'enter':
-			items: list[MenuItem] = self.query_one(SelectionList).selected
-			_ = self.dismiss(Result(ResultType.Selection, _item=items))
+	def action_search(self) -> None:
+		if self._filter:
+			self._handle_search_action()
+
+	@override
+	def action_cancel_operation(self) -> None:
+		if self._filter and self.query_one(Input).has_focus:
+			self._handle_search_action()
+		else:
+			super().action_cancel_operation()
+
+	def _handle_search_action(self) -> None:
+		search_input = self.query_one(Input)
+
+		if search_input.has_focus:
+			self.query_one(OptionList).focus()
+		else:
+			search_input.focus()
 
 	async def run(self) -> Result[ValueT]:
 		assert TApp.app
@@ -394,7 +450,7 @@ class SelectListScreen(BaseScreen[ValueT]):
 		selections = []
 
 		for item in self._group.get_enabled_items():
-			is_selected = item in self._group.selected_items
+			is_selected = item in self._selected_items
 			selection = Selection(item.text, item, is_selected)
 			selections.append(selection)
 
@@ -404,13 +460,11 @@ class SelectListScreen(BaseScreen[ValueT]):
 	def compose(self) -> ComposeResult:
 		yield from self._compose_header()
 
-		selections = self._get_selections()
-
 		with Vertical(classes='content-container'):
 			if self._header:
 				yield Static(self._header, classes='header', id='header')
 
-			selection_list = SelectionList[MenuItem](*selections, id='select_list_widget')
+			selection_list = SelectionList[MenuItem](id='select_list_widget')
 
 			if not self._show_frame:
 				selection_list.classes = 'no-border'
@@ -428,21 +482,52 @@ class SelectListScreen(BaseScreen[ValueT]):
 					yield Rule(orientation=rule_orientation)
 					yield Static('', id='preview_content')
 
+		if self._filter:
+			yield Input(placeholder='/filter', id='filter-input')
+
 		yield Footer()
 
-	def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
-		selected_option = event.option
-		if selected_option.id:
-			item = self._group.find_by_id(selected_option.id)
-			_ = self.dismiss(Result(ResultType.Selection, _item=item))
+	def on_mount(self) -> None:
+		self._update_options(self._options)
+
+	def on_key(self, event: Key) -> None:
+		if self.query_one(SelectionList).has_focus:
+			if event.key == 'enter':
+				_ = self.dismiss(Result(ResultType.Selection, _item=self._selected_items))
+
+	def on_input_changed(self, event: Input.Changed) -> None:
+		search_term = event.value.lower()
+		self._group.set_filter_pattern(search_term)
+		filtered_options = self._get_selections()
+		self._update_options(filtered_options)
+
+	def _update_options(self, options: list[Option]) -> None:
+		selection_list = self.query_one(SelectionList)
+		selection_list.clear_options()
+		selection_list.add_options(options)
+
+		selection_list.highlighted = self._group.get_focused_index()
+
+		if focus_item := self._group.focus_item:
+			self._set_preview(focus_item)
 
 	def on_selection_list_selection_highlighted(self, event: SelectionList.SelectionHighlighted[ValueT]) -> None:
 		if self._preview_location is None:
 			return None
 
-		index = event.selection_index
-		selection: Selection[MenuItem] = self.query_one(SelectionList).get_option_at_index(index)
-		item: MenuItem = selection.value
+		item = event.selection.value
+		self._set_preview(item)
+
+	def on_selection_list_selection_toggled(self, event: SelectionList.SelectionToggled[ValueT]) -> None:
+		item = event.selection.value
+		if item not in self._selected_items:
+			self._selected_items.append(item)
+		else:
+			self._selected_items.remove(item)
+
+	def _set_preview(self, item: MenuItem) -> None:
+		if self._preview_location is None:
+			return
 
 		preview_widget = self.query_one('#preview_content', Static)
 
@@ -465,34 +550,24 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 
 	CSS = """
 	ConfirmationScreen {
-		align: center middle;
+		align: center top;
 	}
 
-	.dialog-wrapper {
-		align: center middle;
-		height: 100%;
-		width: 100%;
+	.header {
+		text-align: center;
+		padding-top: 2;
+		padding-bottom: 1;
 	}
 
-	.dialog {
+	.content-container {
 		width: 80;
 		height: 10;
 		border: none;
 		background: transparent;
 	}
 
-	.dialog-content {
-		padding: 1;
-		height: 100%;
-	}
-
-	.message {
-		text-align: center;
-		margin-bottom: 1;
-	}
-
 	.buttons {
-		align: center middle;
+		align: center top;
 		background: transparent;
 	}
 
@@ -530,13 +605,13 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 	def compose(self) -> ComposeResult:
 		yield from self._compose_header()
 
-		with Center(classes='dialog-wrapper'):
-			with Vertical(classes='dialog'):
-				with Vertical(classes='dialog-content'):
-					yield Static(self._header, classes='message')
-					with Horizontal(classes='buttons'):
-						for item in self._group.items:
-							yield Button(item.text, id=item.key)
+		yield Static(self._header, classes='header')
+
+		with Center():
+			with Vertical(classes='content-container'):
+				with Horizontal(classes='buttons'):
+					for item in self._group.items:
+						yield Button(item.text, id=item.key)
 
 		yield Footer()
 
@@ -692,38 +767,65 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 	]
 
 	CSS = """
-		TableSelectionScreen {
-			align: center middle;
-			background: transparent;
-		}
+	TableSelectionScreen {
+		align: center top;
+		background: transparent;
+	}
 
-		DataTable {
-			height: auto;
-			width: auto;
-			border: none;
-			background: transparent;
-		}
+	.header {
+		text-align: center;
+		width: 100%;
+		padding-top: 2;
+		padding-bottom: 1;
+		color: white;
+		text-style: bold;
+		background: transparent;
+	}
 
-		DataTable .datatable--header {
-			background: transparent;
-			border: solid;
-		}
+	.content-container {
+		align: center top;
+		width: 1fr;
+		height: 1fr;
+		background: transparent;
+	}
 
-		.content-container {
-			width: auto;
-			background: transparent;
-			padding: 2 0;
-		}
+	.table-container {
+		align: center top;
+		height: auto;
+		background: transparent;
+	}
 
-		.header {
-			text-align: center;
-			margin-bottom: 1;
-		}
+	.preview-header {
+		text-align: center;
+		width: 100%;
+		padding-bottom: 1;
+		color: white;
+		text-style: bold;
+		background: transparent;
+	}
 
-		LoadingIndicator {
-			height: auto;
-			background: transparent;
-		}
+	.preview-container {
+		align: center top;
+		height: auto;
+		background: transparent;
+	}
+
+	DataTable {
+		width: auto;
+		height: auto;
+		border: none;
+		background: transparent;
+	}
+
+	DataTable .datatable--header {
+		background: transparent;
+		border: solid;
+	}
+
+	LoadingIndicator {
+		height: auto;
+		background: transparent;
+	}
 	"""
 
 	def __init__(
@@ -735,6 +837,8 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		allow_skip: bool = False,
 		loading_header: str | None = None,
 		multi: bool = False,
+		preview_header: str | None = None,
+		preview_callback: Callable[[ValueT], str | None] | None = None,
 	):
 		super().__init__(allow_skip, allow_reset)
 		self._header = header
@@ -742,6 +846,8 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		self._data_callback = data_callback
 		self._loading_header = loading_header
 		self._multi = multi
+		self._preview_header = preview_header
+		self._preview_callback = preview_callback
 
 		self._selected_keys: set[RowKey] = set()
 		self._current_row_key: RowKey | None = None
@@ -767,16 +873,24 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 	def compose(self) -> ComposeResult:
 		yield from self._compose_header()
 
-		with Center():
-			with Vertical(classes='content-container'):
-				if self._header:
-					yield Static(self._header, classes='header', id='header')
+		if self._header:
+			yield Static(self._header, classes='header', id='header')
 
+		with Vertical(classes='content-container'):
+			with Vertical(classes='table-container'):
 				if self._loading_header:
 					yield Static(self._loading_header, classes='header', id='loading-header')
 
 				yield LoadingIndicator(id='loader')
 				yield DataTable(id='data_table')
+
+			yield Rule(orientation='horizontal')
+
+			if self._preview_header:
+				yield Static(self._preview_header, classes='preview-header', id='preview-header')
+
+			with Vertical(classes='preview-container'):
+				yield Static('', id='preview_content')
 
 		yield Footer()
 
@@ -813,7 +927,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		cols = list(data[0].table_data().keys())  # type: ignore[attr-defined]
 
 		if self._multi:
-			cols.insert(0, ' ')
+			cols.insert(0, '   ')
 
 		table.add_columns(*cols)
 
@@ -821,7 +935,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 			row_values = list(d.table_data().values())  # type: ignore[attr-defined]
 
 			if self._multi:
-				row_values.insert(0, ' ')
+				row_values.insert(0, '[ ]')
 
 			table.add_row(*row_values, key=d)  # type: ignore[arg-type]
 
@@ -845,13 +959,27 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
 		if self._current_row_key in self._selected_keys:
 			self._selected_keys.remove(self._current_row_key)
-			table.update_cell(self._current_row_key, cell_key.column_key, ' ')
+			table.update_cell(self._current_row_key, cell_key.column_key, '[ ]')
 		else:
 			self._selected_keys.add(self._current_row_key)
-			table.update_cell(self._current_row_key, cell_key.column_key, 'X')
+			table.update_cell(self._current_row_key, cell_key.column_key, '[X]')
 
 	def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
 		self._current_row_key = event.row_key
+
+		if self._preview_callback is None:
+			return None
+
+		preview_widget = self.query_one('#preview_content', Static)
+		data: ValueT = event.row_key.value
+
+		if self._preview_callback is not None:
+			maybe_preview = self._preview_callback(data)
+			if maybe_preview is not None:
+				preview_widget.update(maybe_preview)
+				return
+
+		preview_widget.update('')
 
 	def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
 		if self._multi:
