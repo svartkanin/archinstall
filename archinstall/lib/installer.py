@@ -132,7 +132,7 @@ class Installer:
 			self.sync_log_to_install_medium()
 
 			# We avoid printing /mnt/<log path> because that might confuse people if they note it down
-			# and then reboot, and a identical log file will be found in the ISO medium anyway.
+			# and then reboot, and an identical log file will be found in the ISO medium anyway.
 			Tui.print(str(tr('[!] A log file has been created here: {}').format(logger.path)))
 			Tui.print(tr('Please submit this issue (and file) to https://github.com/archlinux/archinstall/issues'))
 
@@ -868,6 +868,9 @@ class Installer:
 		pacman_conf.enable(optional_repositories)
 		pacman_conf.apply()
 
+		if locale_config:
+			self.set_vconsole(locale_config)
+
 		self.pacman.strap(self._base_packages)
 		self._helper_flags['base-strapped'] = True
 
@@ -1321,14 +1324,7 @@ class Installer:
 			try:
 				SysCommand(command, peek_output=True)
 			except SysCallError as err:
-				if not bootloader_removable:
-					command.append('--removable')
-					try:
-						SysCommand(command, peek_output=True)
-					except SysCallError:
-						pass
-
-				raise DiskError(f'Could not install GRUB to {self.target}{efi_partition.mountpoint}: {err}') from err
+				raise DiskError(f'Could not install GRUB to {self.target}{efi_partition.mountpoint}: {err}')
 		else:
 			info(f'GRUB boot partition: {boot_partition.dev_path}')
 
@@ -1789,6 +1785,29 @@ class Installer:
 			return True
 		except SysCallError:
 			return False
+
+	def set_vconsole(self, locale_config: 'LocaleConfiguration') -> None:
+		# use the already set kb layout
+		kb_vconsole: str = locale_config.kb_layout
+		# this is the default used in ISO other option for hdpi screens TER16x32
+		# can be checked using
+		# zgrep "CONFIG_FONT" /proc/config.gz
+		# https://wiki.archlinux.org/title/Linux_console#Fonts
+
+		font_vconsole = 'default8x16'
+
+		# Ensure /etc exists
+		vconsole_dir: Path = self.target / 'etc'
+		vconsole_dir.mkdir(parents=True, exist_ok=True)
+		vconsole_path: Path = vconsole_dir / 'vconsole.conf'
+
+		# Write both KEYMAP and FONT to vconsole.conf
+		vconsole_content = f'KEYMAP={kb_vconsole}\n'
+		# Corrects another warning
+		vconsole_content += f'FONT={font_vconsole}\n'
+
+		vconsole_path.write_text(vconsole_content)
+		info(f'Wrote to {vconsole_path} using {kb_vconsole} and {font_vconsole}')
 
 	def set_keyboard_language(self, language: str) -> bool:
 		info(f'Setting keyboard language to {language}')
