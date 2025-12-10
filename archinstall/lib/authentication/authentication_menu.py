@@ -9,7 +9,7 @@ from archinstall.lib.models.users import Password, User
 from archinstall.lib.output import FormattedOutput
 from archinstall.lib.translationhandler import tr
 from archinstall.lib.utils.util import get_password
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 

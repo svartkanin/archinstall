@@ -3,7 +3,7 @@ from typing import override
 
 from archinstall.lib.menu.helpers import Confirmation, Selection
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 from ..args import arch_config_handler
@@ -154,20 +154,17 @@ class BootloaderMenu(AbstractSubMenu[BootloaderConfiguration]):
 			+ '\n'
 		)
 
-		group = MenuItemGroup.yes_no()
-		group.set_focus_by_value(preset)
-
-		result = Selection[bool](
-			group,
+		result = Confirmation(
 			header=prompt,
 			allow_skip=True,
+			preset=preset,
 		).show()
 
 		match result.type_:
 			case ResultType.Skip:
 				return preset
 			case ResultType.Selection:
-				return result.item() == MenuItem.yes()
+				return result.get_value()
 			case ResultType.Reset:
 				raise ValueError('Unhandled result type')
 

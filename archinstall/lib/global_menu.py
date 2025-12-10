@@ -7,7 +7,7 @@ from archinstall.lib.models.application import ApplicationConfiguration
 from archinstall.lib.models.authentication import AuthenticationConfiguration
 from archinstall.lib.models.device import DiskLayoutConfiguration, DiskLayoutType, EncryptionType, FilesystemType, PartitionModification
 from archinstall.lib.packages import list_available_packages
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 
 from .applications.application_menu import ApplicationMenu
 from .args import ArchConfig

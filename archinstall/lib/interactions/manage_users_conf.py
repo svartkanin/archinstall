@@ -5,7 +5,7 @@ from typing import override
 
 from archinstall.lib.menu.helpers import Confirmation, Input
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItem
+from archinstall.tui.ui.menu_item import MenuItem
 from archinstall.tui.ui.result import ResultType
 
 from ..menu.list_manager import ListManager

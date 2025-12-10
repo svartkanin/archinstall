@@ -4,7 +4,7 @@ from archinstall.lib.args import arch_config_handler
 from archinstall.lib.menu.helpers import Confirmation, Selection
 from archinstall.lib.models import Bootloader
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 from ..hardware import GfxDriver, SysInfo

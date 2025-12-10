@@ -5,7 +5,7 @@ from archinstall.default_profiles.profile import GreeterType, ProfileType
 from archinstall.default_profiles.xorg import XorgProfile
 from archinstall.lib.menu.helpers import Selection
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 

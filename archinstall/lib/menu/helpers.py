@@ -4,7 +4,6 @@ from typing import Any, Literal, TypeVar, override
 from textual.validation import ValidationResult, Validator
 
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItemGroup
 from archinstall.tui.ui.components import (
 	ConfirmationScreen,
 	InputScreen,
@@ -15,6 +14,7 @@ from archinstall.tui.ui.components import (
 	TableSelectionScreen,
 	tui,
 )
+from archinstall.tui.ui.menu_item import MenuItemGroup
 from archinstall.tui.ui.result import Result, ResultType
 
 ValueT = TypeVar('ValueT')
@@ -89,7 +89,7 @@ class Confirmation:
 		self._allow_reset = allow_reset
 		self._preset = preset
 
-		self._group: MenuItemGroup = MenuItemGroup.yes_no()
+		self._group = MenuItemGroup.yes_no()
 		self._group.set_focus_by_value(preset)
 
 	def show(self) -> Result[bool]:

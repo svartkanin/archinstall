@@ -2,7 +2,7 @@ from typing import override
 
 from archinstall.lib.menu.helpers import Selection
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 from ..menu.abstract_menu import AbstractSubMenu

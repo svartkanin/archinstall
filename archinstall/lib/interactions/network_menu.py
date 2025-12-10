@@ -5,7 +5,7 @@ from typing import assert_never, override
 
 from archinstall.lib.menu.helpers import Input, Selection
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 from ..menu.list_manager import ListManager

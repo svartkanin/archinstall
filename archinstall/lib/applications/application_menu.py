@@ -4,7 +4,7 @@ from archinstall.lib.menu.abstract_menu import AbstractSubMenu
 from archinstall.lib.menu.helpers import Confirmation, Selection
 from archinstall.lib.models.application import ApplicationConfiguration, Audio, AudioConfiguration, BluetoothConfiguration
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 
@@ -66,17 +66,13 @@ class ApplicationMenu(AbstractSubMenu[ApplicationConfiguration]):
 
 
 def select_bluetooth(preset: BluetoothConfiguration | None) -> BluetoothConfiguration | None:
-	group = MenuItemGroup.yes_no()
-	group.focus_item = MenuItem.no()
-
-	if preset is not None:
-		group.set_selected_by_value(preset.enabled)
-
 	header = tr('Would you like to configure Bluetooth?') + '\n'
+	preset_val = preset.enabled if preset else False
 
 	result = Confirmation(
 		header=header,
 		allow_skip=True,
+		preset=preset_val,
 	).show()
 
 	match result.type_:

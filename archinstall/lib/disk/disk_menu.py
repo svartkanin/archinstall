@@ -15,7 +15,7 @@ from archinstall.lib.models.device import (
 	SnapshotType,
 )
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 from ..interactions.disk_conf import select_disk_config, select_lvm_config

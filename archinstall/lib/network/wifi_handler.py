@@ -9,8 +9,8 @@ from archinstall.lib.models.network import WifiConfiguredNetwork, WifiNetwork
 from archinstall.lib.network.wpa_supplicant import WpaSupplicantConfig
 from archinstall.lib.output import debug
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItemGroup
 from archinstall.tui.ui.components import ConfirmationScreen, InputScreen, LoadingScreen, NotifyScreen, TableSelectionScreen, tui
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import Result, ResultType
 
 
@@ -115,16 +115,19 @@ class WifiHandler:
 
 		debug(f'Found wifi interface: {wifi_iface}')
 
-		async def get_wifi_networks() -> list[WifiNetwork]:
+		async def get_wifi_networks() -> MenuItemGroup:
 			debug('Scanning Wifi networks')
 			result = self._wpa_cli('scan', wifi_iface)
 
 			if not result.success:
 				debug(f'Failed to scan wifi networks: {result.error}')
-				return []
+				return MenuItemGroup([])
 
 			await sleep(5)
-			return self._get_scan_results(wifi_iface)
+			wifi_networks = self._get_scan_results(wifi_iface)
+
+			items = [MenuItem(network.ssid, value=network) for network in wifi_networks]
+			return MenuItemGroup(items)
 
 		result = await TableSelectionScreen[WifiNetwork](
 			header=tr('Select wifi network to connect to'),

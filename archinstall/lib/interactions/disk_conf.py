@@ -28,7 +28,7 @@ from archinstall.lib.models.device import (
 )
 from archinstall.lib.output import debug
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 from ..output import FormattedOutput
@@ -37,7 +37,7 @@ from ..utils.util import prompt_dir
 
 def select_devices(preset: list[BDevice] | None = []) -> list[BDevice]:
 	def _preview_device_selection(item: MenuItem) -> str | None:
-		device: _DeviceInfo = item.value
+		device: _DeviceInfo = item.value  # type: ignore[assignment]
 		dev = device_handler.get_device(device.path)
 
 		if dev and dev.partition_infos:

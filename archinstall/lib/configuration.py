@@ -5,7 +5,7 @@ from pathlib import Path
 
 from archinstall.lib.menu.helpers import Confirmation, Selection
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 from .args import ArchConfig
@@ -55,18 +55,13 @@ class ConfigurationOutput:
 		header = f'{tr("The specified configuration will be applied")}. '
 		header += tr('Would you like to continue?') + '\n'
 
-		group = MenuItemGroup.yes_no()
-		group.focus_item = MenuItem.yes()
-		group.set_preview_for_all(lambda x: self.user_config_to_json())
-
-		result = Selection[bool](
-			group,
+		result = Confirmation(
 			header=header,
 			allow_skip=False,
-			preview_location='bottom',
+			preset=True,
 		).show()
 
-		if result.item() != MenuItem.yes():
+		if not result.get_value():
 			return False
 
 		return True

@@ -4,7 +4,7 @@ from archinstall.default_profiles.profile import GreeterType, Profile, ProfileTy
 from archinstall.lib.menu.helpers import Selection
 from archinstall.lib.output import info
 from archinstall.lib.profile.profiles_handler import profile_handler
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 if TYPE_CHECKING:

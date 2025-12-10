@@ -5,7 +5,7 @@ from typing import override
 from archinstall.default_profiles.profile import GreeterType, Profile
 from archinstall.lib.menu.helpers import Confirmation, Selection
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 from ..hardware import GfxDriver
@@ -108,7 +108,7 @@ class ProfileMenu(AbstractSubMenu[ProfileConfiguration]):
 						preset=False,
 					).show()
 
-					if result.item() == MenuItem.no():
+					if result.get_value():
 						return preset
 
 		return driver

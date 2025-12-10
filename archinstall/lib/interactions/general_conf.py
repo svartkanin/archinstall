@@ -7,7 +7,7 @@ from archinstall.lib.menu.helpers import Confirmation, Input, Loading, Notify, S
 from archinstall.lib.models.packages import Repository
 from archinstall.lib.packages.packages import list_available_packages
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.menu_item import MenuItem, MenuItemGroup
+from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
 
 from ..locale.utils import list_timezones
@@ -31,14 +31,10 @@ def ask_ntp(preset: bool = True) -> bool:
 		+ '\n'
 	)
 
-	preset_val = MenuItem.yes() if preset else MenuItem.no()
-	group = MenuItemGroup.yes_no()
-	group.focus_item = preset_val
-
-	result = Selection[bool](
-		group,
+	result = Confirmation(
 		header=header,
 		allow_skip=True,
+		preset=preset,
 	).show()
 
 	match result.type_:
@@ -197,7 +193,7 @@ def ask_additional_packages_to_install(
 	menu_group = MenuItemGroup(items, sort_items=True)
 	menu_group.set_selected_by_value(preset_packages)
 
-	result = Selection[AvailablePackage | PackageGroup](
+	pck_result = Selection[AvailablePackage | PackageGroup](
 		menu_group,
 		header=header,
 		allow_reset=True,
@@ -208,13 +204,13 @@ def ask_additional_packages_to_install(
 		enable_filter=True,
 	).show()
 
-	match result.type_:
+	match pck_result.type_:
 		case ResultType.Skip:
 			return preset
 		case ResultType.Reset:
 			return []
 		case ResultType.Selection:
-			selected_pacakges = result.get_values()
+			selected_pacakges = pck_result.get_values()
 			return [pkg.name for pkg in selected_pacakges]
 
 
