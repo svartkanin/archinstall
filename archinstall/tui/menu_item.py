@@ -112,7 +112,7 @@ class MenuItemGroup:
 			self.focus_first()
 
 		if self.focus_item not in self.items:
-			raise ValueError(f'Selected item not in menu: {focus_item}')
+			raise ValueError(f'Selected item not in menu: {self.focus_item}')
 
 	def add_item(self, item: MenuItem) -> None:
 		self._menu_items.append(item)

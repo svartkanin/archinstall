@@ -221,28 +221,26 @@ class Table[ValueT]:
 	def __init__(
 		self,
 		header: str | None = None,
-		data: MenuItemGroup | None = None,
-		data_callback: Callable[[], Awaitable[MenuItemGroup]] | None = None,
+		group: MenuItemGroup | None = None,
+		group_callback: Callable[[], Awaitable[MenuItemGroup]] | None = None,
 		presets: list[ValueT] | None = None,
 		allow_reset: bool = False,
 		allow_skip: bool = False,
 		loading_header: str | None = None,
 		multi: bool = False,
 		preview_header: str | None = None,
-		preview_callback: Callable[[ValueT], str | None] | None = None,
 	):
 		self._header = header
-		self._data = data
-		self._data_callback = data_callback
+		self._group = group
+		self._data_callback = group_callback
 		self._loading_header = loading_header
 		self._allow_skip = allow_skip
 		self._allow_reset = allow_reset
 		self._multi = multi
 		self._presets = presets
 		self._preview_header = preview_header
-		self._preview_callback = preview_callback
 
-		if self._data is None and self._data_callback is None:
+		if self._group is None and self._data_callback is None:
 			raise ValueError('Either data or data_callback must be provided')
 
 	def show(self) -> Result[ValueT]:
@@ -252,14 +250,13 @@ class Table[ValueT]:
 	async def _run(self) -> None:
 		result = await TableSelectionScreen[ValueT](
 			header=self._header,
-			data=self._data,
-			data_callback=self._data_callback,
+			group=self._group,
+			group_callback=self._data_callback,
 			allow_skip=self._allow_skip,
 			allow_reset=self._allow_reset,
 			loading_header=self._loading_header,
 			multi=self._multi,
 			preview_header=self._preview_header,
-			preview_callback=self._preview_callback,
 		).run()
 
 		if result.type_ == ResultType.Reset:

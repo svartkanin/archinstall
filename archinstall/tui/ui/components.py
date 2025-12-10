@@ -6,11 +6,11 @@ from typing import Any, ClassVar, Literal, TypeVar, override
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Center, Horizontal, Vertical
+from textual.containers import Center, Horizontal, HorizontalScroll, Vertical
 from textual.events import Key
 from textual.screen import Screen
 from textual.validation import Validator
-from textual.widgets import Button, DataTable, Footer, Input, LoadingIndicator, OptionList, Rule, SelectionList, Static
+from textual.widgets import Button, DataTable, Footer, Input, Label, LoadingIndicator, OptionList, Rule, SelectionList, Static
 from textual.widgets._data_table import RowKey
 from textual.widgets.option_list import Option
 from textual.widgets.selection_list import Selection
@@ -174,7 +174,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 		OptionList {
 			width: auto;
 			height: auto;
-			min-width: 20%;
+			min-width: 15%;
 			max-height: 1fr;
 
 			padding-top: 0;
@@ -208,16 +208,19 @@ class OptionListScreen(BaseScreen[ValueT]):
 		self._options = self._get_options()
 
 	def action_cursor_down(self) -> None:
-		option_list = self.query_one('#option_list_widget', OptionList)
-		option_list.action_cursor_down()
+		option_list = self.query_one(OptionList)
+		if option_list.has_focus:
+			option_list.action_cursor_down()
 
 	def action_cursor_up(self) -> None:
-		option_list = self.query_one('#option_list_widget', OptionList)
-		option_list.action_cursor_up()
+		option_list = self.query_one(OptionList)
+		if option_list.has_focus:
+			option_list.action_cursor_up()
 
 	def action_search(self) -> None:
-		if self._filter:
-			self._handle_search_action()
+		if self.query_one(OptionList).has_focus:
+			if self._filter:
+				self._handle_search_action()
 
 	@override
 	def action_cancel_operation(self) -> None:
@@ -271,7 +274,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 				with Container():
 					yield option_list
 					yield Rule(orientation=rule_orientation)
-					yield Static('', id='preview_content')
+					yield HorizontalScroll(Label('', id='preview_content'))
 
 		if self._filter:
 			yield Input(placeholder='/filter', id='filter-input')
@@ -280,6 +283,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 
 	def on_mount(self) -> None:
 		self._update_options(self._options)
+		self.query_one(OptionList).focus()
 
 	def on_input_changed(self, event: Input.Changed) -> None:
 		search_term = event.value.lower()
@@ -366,7 +370,8 @@ class SelectListScreen(BaseScreen[ValueT]):
 		.list-container {
 			width: auto;
 			height: auto;
-			max-height: 100%;
+			min-width: 15%;
+			max-height: 1fr;
 
 			margin-top: 2;
 			margin-bottom: 2;
@@ -416,16 +421,19 @@ class SelectListScreen(BaseScreen[ValueT]):
 		self._options = self._get_selections()
 
 	def action_cursor_down(self) -> None:
-		select_list = self.query_one('#select_list_widget', OptionList)
-		select_list.action_cursor_down()
+		select_list = self.query_one(OptionList)
+		if select_list.has_focus:
+			select_list.action_cursor_down()
 
 	def action_cursor_up(self) -> None:
-		select_list = self.query_one('#select_list_widget', OptionList)
-		select_list.action_cursor_up()
+		select_list = self.query_one(OptionList)
+		if select_list.has_focus:
+			select_list.action_cursor_up()
 
 	def action_search(self) -> None:
-		if self._filter:
-			self._handle_search_action()
+		if self.query_one(OptionList).has_focus:
+			if self._filter:
+				self._handle_search_action()
 
 	@override
 	def action_cancel_operation(self) -> None:
@@ -480,7 +488,7 @@ class SelectListScreen(BaseScreen[ValueT]):
 				with Container():
 					yield selection_list
 					yield Rule(orientation=rule_orientation)
-					yield Static('', id='preview_content')
+					yield HorizontalScroll(Label('', id='preview_content'))
 
 		if self._filter:
 			yield Input(placeholder='/filter', id='filter-input')
@@ -489,6 +497,7 @@ class SelectListScreen(BaseScreen[ValueT]):
 
 	def on_mount(self) -> None:
 		self._update_options(self._options)
+		self.query_one(SelectionList).focus()
 
 	def on_key(self, event: Key) -> None:
 		if self.query_one(SelectionList).has_focus:
@@ -783,19 +792,18 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 	}
 
 	.content-container {
-		align: center top;
 		width: 1fr;
 		height: 1fr;
+		max-height: 100%;
+
+		margin-top: 2;
+		margin-bottom: 2;
+		padding: 0;
+
 		background: transparent;
 	}
 
-	.table-container {
-		align: center top;
-		height: auto;
-		background: transparent;
-	}
-
-	.preview-header {
+	.preview {
 		text-align: center;
 		width: 100%;
 		padding-bottom: 1;
@@ -804,7 +812,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		background: transparent;
 	}
 
-	.preview-container {
+	HorizontalScroll {
 		align: center top;
 		height: auto;
 		background: transparent;
@@ -813,6 +821,9 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 	DataTable {
 		width: auto;
 		height: auto;
+
+		padding-bottom: 2;
+
 		border: none;
 		background: transparent;
 	}
@@ -831,28 +842,26 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 	def __init__(
 		self,
 		header: str | None = None,
-		data: list[ValueT] | None = None,
-		data_callback: Callable[[], Awaitable[list[ValueT]]] | None = None,
+		group: MenuItemGroup | None = None,
+		group_callback: Callable[[], Awaitable[MenuItemGroup]] | None = None,
 		allow_reset: bool = False,
 		allow_skip: bool = False,
 		loading_header: str | None = None,
 		multi: bool = False,
 		preview_header: str | None = None,
-		preview_callback: Callable[[ValueT], str | None] | None = None,
 	):
 		super().__init__(allow_skip, allow_reset)
 		self._header = header
-		self._data = data
-		self._data_callback = data_callback
+		self._group = group
+		self._group_callback = group_callback
 		self._loading_header = loading_header
 		self._multi = multi
 		self._preview_header = preview_header
-		self._preview_callback = preview_callback
 
 		self._selected_keys: set[RowKey] = set()
 		self._current_row_key: RowKey | None = None
 
-		if self._data is None and self._data_callback is None:
+		if self._group is None and self._group_callback is None:
 			raise ValueError('Either data or data_callback must be provided')
 
 	async def run(self) -> Result[ValueT]:
@@ -877,20 +886,22 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 			yield Static(self._header, classes='header', id='header')
 
 		with Vertical(classes='content-container'):
-			with Vertical(classes='table-container'):
-				if self._loading_header:
-					yield Static(self._loading_header, classes='header', id='loading-header')
+			if self._loading_header:
+				yield Static(self._loading_header, classes='header', id='loading-header')
 
-				yield LoadingIndicator(id='loader')
-				yield DataTable(id='data_table')
+			yield LoadingIndicator(id='loader')
 
-			yield Rule(orientation='horizontal')
+			if self._preview_header is None:
+				with Center():
+					with Vertical():
+						yield HorizontalScroll(DataTable(id='data_table'))
 
-			if self._preview_header:
-				yield Static(self._preview_header, classes='preview-header', id='preview-header')
-
-			with Vertical(classes='preview-container'):
-				yield Static('', id='preview_content')
+			else:
+				with Vertical():
+					yield HorizontalScroll(DataTable(id='data_table'))
+					yield Rule(orientation='horizontal')
+					yield Static(self._preview_header, classes='preview', id='preview-header')
+					yield HorizontalScroll(Label('', id='preview_content'))
 
 		yield Footer()
 
@@ -899,16 +910,16 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		data_table = self.query_one(DataTable)
 		data_table.cell_padding = 2
 
-		if self._data:
-			self._put_data_to_table(data_table, self._data)
+		if self._group:
+			self._put_data_to_table(data_table, self._group)
 		else:
 			self._load_data(data_table)
 
 	@work
 	async def _load_data(self, table: DataTable[ValueT]) -> None:
-		assert self._data_callback is not None
-		data = await self._data_callback()
-		self._put_data_to_table(table, data)
+		assert self._group_callback is not None
+		group = await self._group_callback()
+		self._put_data_to_table(table, group)
 
 	def _display_header(self, is_loading: bool) -> None:
 		try:
@@ -919,25 +930,33 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		except Exception:
 			pass
 
-	def _put_data_to_table(self, table: DataTable[ValueT], data: list[ValueT]) -> None:
-		if not data:
+	def _put_data_to_table(self, table: DataTable[ValueT], group: MenuItemGroup) -> None:
+		items = group.items
+		selected = group.selected_items
+
+		if not items:
 			_ = self.dismiss(Result(ResultType.Selection))
 			return
 
-		cols = list(data[0].table_data().keys())  # type: ignore[attr-defined]
+		cols = list(items[0].value.table_data().keys())  # type: ignore[attr-defined]
 
 		if self._multi:
 			cols.insert(0, '   ')
 
 		table.add_columns(*cols)
 
-		for d in data:
-			row_values = list(d.table_data().values())  # type: ignore[attr-defined]
+		for item in items:
+			row_values = list(item.value.table_data().values())  # type: ignore[attr-defined]
 
 			if self._multi:
-				row_values.insert(0, '[ ]')
+				if item in selected:
+					row_values.insert(0, '[X]')
+				else:
+					row_values.insert(0, '[ ]')
 
-			table.add_row(*row_values, key=d)  # type: ignore[arg-type]
+			row_key = table.add_row(*row_values, key=item)  # type: ignore[arg-type]
+			if item in selected:
+				self._selected_keys.add(row_key)
 
 		table.cursor_type = 'row'
 		table.display = True
@@ -966,42 +985,37 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
 	def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
 		self._current_row_key = event.row_key
+		item: MenuItem = event.row_key.value
 
-		if self._preview_callback is None:
-			return None
+		if not item.preview_action:
+			return
 
 		preview_widget = self.query_one('#preview_content', Static)
-		data: ValueT = event.row_key.value
 
-		if self._preview_callback is not None:
-			maybe_preview = self._preview_callback(data)
-			if maybe_preview is not None:
-				preview_widget.update(maybe_preview)
-				return
+		maybe_preview = item.preview_action(item)
+		if maybe_preview is not None:
+			preview_widget.update(maybe_preview)
+			return
 
 		preview_widget.update('')
 
 	def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
 		if self._multi:
+			debug(f'Selected keys: {self._selected_keys}')
+
 			if len(self._selected_keys) == 0:
-				_ = self.dismiss(
-					Result[ValueT](
-						ResultType.Selection,
-						_data=[event.row_key.value],  # type: ignore[list-item]
-					)
-				)
+				if not self._allow_skip:
+					return
+
+				_ = self.dismiss(Result[ValueT](ResultType.Skip))
 			else:
-				_ = self.dismiss(
-					Result(
-						ResultType.Selection,
-						_data=[row_key.value for row_key in self._selected_keys],  # type: ignore[misc]
-					)
-				)
+				items = [row_key.value for row_key in self._selected_keys]
+				_ = self.dismiss(Result(ResultType.Selection, _item=items))  # type: ignore[misc]
 		else:
 			_ = self.dismiss(
 				Result[ValueT](
 					ResultType.Selection,
-					_data=event.row_key.value,  # type: ignore[arg-type]
+					_item=event.row_key.value,  # type: ignore[arg-type]
 				)
 			)
 
