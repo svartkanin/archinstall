@@ -293,5 +293,5 @@ def ask_abort() -> None:
 		preset=False,
 	).show()
 
-	if result.item() == MenuItem.yes():
+	if result.get_value():
 		exit(0)

@@ -5,7 +5,6 @@ from typing import Any, Self
 
 from archinstall.lib.menu.helpers import Selection
 from archinstall.lib.translationhandler import tr
-from archinstall.tui.curses_menu import Tui
 from archinstall.tui.types import Chars
 from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
@@ -43,7 +42,7 @@ class AbstractMenu[ValueT]:
 		# TODO: skip processing when it comes from a planified exit
 		if exc_type is not None:
 			error(str(exc_value))
-			Tui.print('Please submit this issue (and file) to https://github.com/archlinux/archinstall/issues')
+			print('Please submit this issue (and file) to https://github.com/archlinux/archinstall/issues')
 
 			# Return None to propagate the exception
 			return None
