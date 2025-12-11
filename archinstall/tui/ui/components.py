@@ -989,6 +989,10 @@ class _AppInstance(App[ValueT]):
 		color: white;
 	}
 
+	Input {
+		color: white;
+	}
+
 	.app-header {
 		dock: top;
 		height: auto;
