@@ -668,20 +668,6 @@ class InputScreen(BaseScreen[str]):
 		color: red;
 		text-align: center;
 	}
-
-	Input {
-		border: solid $accent;
-		background: transparent;
-		height: 3;
-	}
-
-	Input .input--cursor {
-		color: white;
-	}
-
-	Input:focus {
-		border: solid $primary;
-	}
 	"""
 
 	def __init__(
@@ -1025,9 +1011,22 @@ class _AppInstance(App[ValueT]):
 		background: transparent;
 	}
 
-
 	.no-border {
 		border: none;
+	}
+
+	Input {
+		border: solid $accent;
+		background: transparent;
+		height: 3;
+	}
+
+	Input .input--cursor {
+		color: white;
+	}
+
+	Input:focus {
+		border: solid $primary;
 	}
 
 	Footer {
