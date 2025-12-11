@@ -153,7 +153,7 @@ def select_driver(options: list[GfxDriver] = [], preset: GfxDriver | None = None
 
 
 def ask_for_swap(preset: bool = True) -> bool:
-	prompt = tr('Would you like to use swap on zram?') + '\n'
+	prompt = tr('Would you like to use swap on zram?')
 
 	result = Confirmation(
 		header=prompt,

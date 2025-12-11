@@ -51,27 +51,27 @@ class BaseScreen(Screen[Result[ValueT]]):
 
 class LoadingScreen(BaseScreen[None]):
 	CSS = """
-    LoadingScreen {
-        align: center middle;
-        background: transparent;
-    }
+	LoadingScreen {
+		align: center middle;
+		background: transparent;
+	}
 
-    .dialog {
-        align: center middle;
-        width: 100%;
-        border: none;
-        background: transparent;
-    }
+	.dialog {
+		align: center middle;
+		width: 100%;
+		border: none;
+		background: transparent;
+	}
 
-    .header {
-        text-align: center;
-        margin-bottom: 1;
-    }
+	.header {
+		text-align: center;
+		margin-bottom: 1;
+	}
 
-    LoadingIndicator {
-        align: center middle;
-    }
-    """
+	LoadingIndicator {
+		align: center middle;
+	}
+	"""
 
 	def __init__(
 		self,
@@ -128,65 +128,42 @@ class OptionListScreen(BaseScreen[ValueT]):
 	]
 
 	CSS = """
-        OptionListScreen {
-            align-horizontal: center;
-            align-vertical: middle;
-            background: transparent;
-        }
+		OptionListScreen {
+			align-horizontal: center;
+			align-vertical: middle;
+			background: transparent;
+		}
 
-        .content-container {
-            width: 1fr;
-            height: 1fr;
-            max-height: 100%;
+		.content-container {
+			width: 1fr;
+			height: 1fr;
+			max-height: 100%;
 
-            margin-top: 2;
-            margin-bottom: 2;
-            padding: 0;
+			margin-top: 2;
+			margin-left: 2;
 
-            background: transparent;
-        }
+			background: transparent;
+		}
 
-        .header {
-            text-align: center;
-            margin-top: 1;
-            margin-bottom: 0;
-            width: 100%;
-            height: auto;
-            background: transparent;
-        }
+		.list-container {
+			width: auto;
+			height: auto;
+			max-height: 100%;
 
-        .list-container {
-            width: auto;
-            height: auto;
-            max-height: 100%;
+			background: transparent;
+		}
 
-            margin-top: 2;
-            margin-bottom: 2;
-            padding: 0;
+		OptionList {
+			width: auto;
+			height: auto;
+			min-width: 15%;
+			max-height: 1fr;
 
-            background: transparent;
-        }
+			scrollbar-size-vertical: 1;
 
-        .no-border {
-            border: none;
-        }
-
-        OptionList {
-            width: auto;
-            height: auto;
-            min-width: 15%;
-            max-height: 1fr;
-
-            padding-top: 0;
-            padding-bottom: 0;
-            padding-left: 1;
-            padding-right: 1;
-
-            scrollbar-size-vertical: 1;
-
-            background: transparent;
-        }
-    """
+			background: transparent;
+		}
+	"""
 
 	def __init__(
 		self,
@@ -256,7 +233,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 
 		with Vertical(classes='content-container'):
 			if self._header:
-				yield Static(self._header, classes='header', id='header')
+				yield Static(self._header, classes='header-text', id='header_text')
 
 			option_list = OptionList(id='option_list_widget')
 
@@ -340,65 +317,42 @@ class SelectListScreen(BaseScreen[ValueT]):
 	]
 
 	CSS = """
-        SelectListScreen {
-            align-horizontal: center;
-            align-vertical: middle;
-            background: transparent;
-        }
+		SelectListScreen {
+			align-horizontal: center;
+			align-vertical: middle;
+			background: transparent;
+		}
 
-        .content-container {
-            width: 1fr;
-            height: 1fr;
-            max-height: 100%;
+		.content-container {
+			width: 1fr;
+			height: 1fr;
+			max-height: 100%;
 
-            margin-top: 2;
-            margin-bottom: 2;
-            padding: 0;
+			margin-top: 2;
+			margin-left: 2;
 
-            background: transparent;
-        }
+			background: transparent;
+		}
 
-        .header {
-            text-align: center;
-            margin-top: 1;
-            margin-bottom: 0;
-            width: 100%;
-            height: auto;
-            background: transparent;
-        }
+		.list-container {
+			width: auto;
+			height: auto;
+			min-width: 15%;
+			max-height: 1fr;
 
-        .list-container {
-            width: auto;
-            height: auto;
-            min-width: 15%;
-            max-height: 1fr;
+			background: transparent;
+		}
 
-            margin-top: 2;
-            margin-bottom: 2;
-            padding: 0;
+		SelectionList {
+			width: auto;
+			height: auto;
+			max-height: 1fr;
 
-            background: transparent;
-        }
+			scrollbar-size-vertical: 1;
 
-        .no-border {
-            border: none;
-        }
-
-        SelectionList {
-            width: auto;
-            height: auto;
-            max-height: 1fr;
-
-            padding-top: 0;
-            padding-bottom: 0;
-            padding-left: 1;
-            padding-right: 1;
-
-            scrollbar-size-vertical: 1;
-
-            background: transparent;
-        }
-    """
+			background: transparent;
+		}
+	"""
 
 	def __init__(
 		self,
@@ -470,7 +424,7 @@ class SelectListScreen(BaseScreen[ValueT]):
 
 		with Vertical(classes='content-container'):
 			if self._header:
-				yield Static(self._header, classes='header', id='header')
+				yield Static(self._header, classes='header-text', id='header_text')
 
 			selection_list = SelectionList[MenuItem](id='select_list_widget')
 
@@ -559,58 +513,39 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 	]
 
 	CSS = """
-    ConfirmationScreen {
-        align: center top;
-    }
+	ConfirmationScreen {
+		align: center top;
+	}
 
-    .header {
-        text-align: center;
-        margin-top: 1;
-        margin-bottom: 0;
-        width: 100%;
-        height: auto;
+	.content-container {
+		width: 1fr;
+		height: 1fr;
+		max-height: 100%;
 
-        background: transparent;
-    }
+		border: none;
+		background: transparent;
+	}
 
-    .content-container {
-        width: 1fr;
-        height: 1fr;
-        max-height: 100%;
+	.buttons-container {
+		align: center top;
+		height: 3;
+		background: transparent;
+	}
 
-        border: none;
-        background: transparent;
-    }
+	Button {
+		width: 4;
+		height: 3;
+		background: transparent;
+		margin: 0 1;
+	}
 
-    .preview-header {
-        text-align: center;
-        width: 100%;
-        padding-bottom: 1;
-        color: white;
-        text-style: bold;
-        background: transparent;
-    }
-
-    .buttons-container {
-        align: center top;
-        height: 3;
-        background: transparent;
-    }
-
-    Button {
-        width: 4;
-        height: 3;
-        background: transparent;
-        margin: 0 1;
-    }
-
-    Button.-active {
-        background: #1793D1;
-        color: white;
-        border: none;
-        text-style: none;
-    }
-    """
+	Button.-active {
+		background: #1793D1;
+		color: white;
+		border: none;
+		text-style: none;
+	}
+	"""
 
 	def __init__(
 		self,
@@ -633,7 +568,7 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 	def compose(self) -> ComposeResult:
 		yield from self._compose_header()
 
-		yield Static(self._header, classes='header')
+		yield Static(self._header, classes='header-text', id='header_text')
 
 		if self._preview_header is None:
 			with Vertical(classes='content-container'):
@@ -714,51 +649,40 @@ class NotifyScreen(ConfirmationScreen[ValueT]):
 
 class InputScreen(BaseScreen[str]):
 	CSS = """
-    InputScreen {
-        align: center middle;
-    }
+	InputScreen {
+		align: center middle;
+	}
 
-    .input-header {
-        text-align: center;
-        width: 100%;
-        padding-top: 2;
-        padding-bottom: 1;
-        margin: 0 0;
-        color: white;
-        text-style: bold;
-        background: transparent;
-    }
+	.container-wrapper {
+		align: center top;
+		width: 100%;
+		height: 1fr;
+	}
 
-    .container-wrapper {
-        align: center top;
-        width: 100%;
-        height: 1fr;
-    }
+	.input-content {
+		width: 60;
+		height: 10;
+	}
 
-    .input-content {
-        width: 60;
-        height: 10;
-    }
+	.input-failure {
+		color: red;
+		text-align: center;
+	}
 
-    .input-failure {
-        color: red;
-        text-align: center;
-    }
+	Input {
+		border: solid $accent;
+		background: transparent;
+		height: 3;
+	}
 
-    Input {
-        border: solid $accent;
-        background: transparent;
-        height: 3;
-    }
+	Input .input--cursor {
+		color: white;
+	}
 
-    Input .input--cursor {
-        color: white;
-    }
-
-    Input:focus {
-        border: solid $primary;
-    }
-    """
+	Input:focus {
+		border: solid $primary;
+	}
+	"""
 
 	def __init__(
 		self,
@@ -787,7 +711,7 @@ class InputScreen(BaseScreen[str]):
 	def compose(self) -> ComposeResult:
 		yield from self._compose_header()
 
-		yield Static(self._header, classes='input-header')
+		yield Static(self._header, classes='header-text', id='header_text')
 
 		with Center(classes='container-wrapper'):
 			with Vertical(classes='input-content'):
@@ -825,68 +749,48 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 	]
 
 	CSS = """
-    TableSelectionScreen {
-        align: center top;
-        background: transparent;
-    }
+	TableSelectionScreen {
+		align: center top;
+		background: transparent;
+	}
 
-    .header {
-        text-align: center;
-        width: 100%;
-        padding-top: 2;
-        padding-bottom: 1;
-        color: white;
-        text-style: bold;
-        background: transparent;
-    }
+	.content-container {
+		width: 1fr;
+		height: 1fr;
+		max-height: 100%;
 
-    .content-container {
-        width: 1fr;
-        height: 1fr;
-        max-height: 100%;
+		margin-top: 2;
+		margin-bottom: 2;
 
-        margin-top: 2;
-        margin-bottom: 2;
-        padding: 0;
+		background: transparent;
+	}
 
-        background: transparent;
-    }
+	ScrollableContainer {
+		align: center top;
+		height: auto;
+		background: transparent;
+	}
 
-    .preview-header {
-        text-align: center;
-        width: 100%;
-        padding-bottom: 1;
-        color: white;
-        text-style: bold;
-        background: transparent;
-    }
+	DataTable {
+		width: auto;
+		height: auto;
 
-    ScrollableContainer {
-        align: center top;
-        height: auto;
-        background: transparent;
-    }
+		padding-bottom: 2;
 
-    DataTable {
-        width: auto;
-        height: auto;
+		border: none;
+		background: transparent;
+	}
 
-        padding-bottom: 2;
+	DataTable .datatable--header {
+		background: transparent;
+		border: solid;
+	}
 
-        border: none;
-        background: transparent;
-    }
-
-    DataTable .datatable--header {
-        background: transparent;
-        border: solid;
-    }
-
-    LoadingIndicator {
-        height: auto;
-        background: transparent;
-    }
-    """
+	LoadingIndicator {
+		height: auto;
+		background: transparent;
+	}
+	"""
 
 	def __init__(
 		self,
@@ -932,7 +836,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		yield from self._compose_header()
 
 		if self._header:
-			yield Static(self._header, classes='header', id='header')
+			yield Static(self._header, classes='header-text', id='header_text')
 
 		with Vertical(classes='content-container'):
 			if self._loading_header:
@@ -1011,7 +915,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 				else:
 					row_values.insert(0, '[ ]')
 
-			row_key = table.add_row(*row_values, key=item)  # type: ignore[arg-type]
+			row_key = table.add_row(*row_values, key=item)	# type: ignore[arg-type]
 			if item in selected:
 				self._selected_keys.add(row_key)
 
@@ -1070,7 +974,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 			_ = self.dismiss(
 				Result[ValueT](
 					ResultType.Selection,
-					_item=event.row_key.value,  # type: ignore[arg-type]
+					_item=event.row_key.value,	# type: ignore[arg-type]
 				)
 			)
 
@@ -1081,38 +985,69 @@ class _AppInstance(App[ValueT]):
 	]
 
 	CSS = """
-    .app-header {
-        dock: top;
-        height: auto;
-        width: 100%;
-        content-align: center middle;
-        background: #1793D1;
-        color: black;
-        text-style: bold;
-    }
+	Screen {
+		color: white;
+	}
 
-    Footer {
-        dock: bottom;
-        background: #184956;
-        color: white;
-        height: 1;
-    }
+	.app-header {
+		dock: top;
+		height: auto;
+		width: 100%;
+		content-align: center middle;
+		background: #1793D1;
+		color: black;
+		text-style: bold;
+	}
 
-    .footer-key--key {
-        background: black;
-        color: white;
-    }
+	.header-text {
+		text-align: center;
+		width: 100%;
+		height: auto;
 
-    .footer-key--description {
-        background: black;
-        color: white;
-    }
+		padding-top: 2;
+		padding-bottom: 2;
 
-    FooterKey.-command-palette {
-        background: black;
-        border-left: vkey ansi_black;
-    }
-    """
+		background: transparent;
+	}
+
+	.preview-header {
+		text-align: center;
+		color: white;
+		text-style: bold;
+		width: 100%;
+
+		padding-bottom: 1;
+
+		background: transparent;
+	}
+
+
+	.no-border {
+		border: none;
+	}
+
+	Footer {
+		dock: bottom;
+		background: #184956;
+		color: white;
+		height: 1;
+	}
+
+	.footer-key--key {
+		background: black;
+		color: white;
+	}
+
+	.footer-key--description {
+		background: black;
+		color: white;
+	}
+
+	FooterKey.-command-palette {
+		background: black;
+		border-left: vkey ansi_black;
+	}
+	"""
 
 	def __init__(self, main: Any) -> None:
 		super().__init__(ansi_color=True)
@@ -1138,7 +1073,7 @@ class _AppInstance(App[ValueT]):
 		except Exception as err:
 			debug(f'Error while running main app: {err}')
 			# this will terminate the textual app and return the exception
-			self.exit(err)  # type: ignore[arg-type]
+			self.exit(err)	# type: ignore[arg-type]
 
 	@work
 	async def _show_async(self, screen: Screen[Result[ValueT]]) -> Result[ValueT]:

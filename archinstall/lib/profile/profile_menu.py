@@ -187,7 +187,7 @@ def select_profile(
 	top_level_profiles = profile_handler.get_top_level_profiles()
 
 	if header is None:
-		header = tr('This is a list of pre-programmed default_profiles') + '\n'
+		header = tr('Select a profile type')
 
 	items = [MenuItem(p.name, value=p) for p in top_level_profiles]
 	group = MenuItemGroup(items, sort_items=True)
