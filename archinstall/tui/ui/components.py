@@ -6,7 +6,7 @@ from typing import Any, ClassVar, Literal, TypeVar, override
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Center, Horizontal, HorizontalScroll, Vertical
+from textual.containers import Center, Horizontal, ScrollableContainer, Vertical
 from textual.events import Key
 from textual.screen import Screen
 from textual.validation import Validator
@@ -274,7 +274,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 				with Container():
 					yield option_list
 					yield Rule(orientation=rule_orientation)
-					yield HorizontalScroll(Label('', id='preview_content'))
+					yield ScrollableContainer(Label('', id='preview_content'))
 
 		if self._filter:
 			yield Input(placeholder='/filter', id='filter-input')
@@ -488,7 +488,7 @@ class SelectListScreen(BaseScreen[ValueT]):
 				with Container():
 					yield selection_list
 					yield Rule(orientation=rule_orientation)
-					yield HorizontalScroll(Label('', id='preview_content'))
+					yield ScrollableContainer(Label('', id='preview_content'))
 
 		if self._filter:
 			yield Input(placeholder='/filter', id='filter-input')
@@ -565,19 +565,35 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 
 	.header {
 		text-align: center;
-		padding-top: 2;
-		padding-bottom: 1;
+		margin-top: 1;
+		margin-bottom: 0;
+		width: 100%;
+		height: auto;
+
+		background: transparent;
 	}
 
 	.content-container {
-		width: 80;
-		height: 10;
+		width: 1fr;
+		height: 1fr;
+		max-height: 100%;
+
 		border: none;
 		background: transparent;
 	}
 
-	.buttons {
+	.preview-header {
+		text-align: center;
+		width: 100%;
+		padding-bottom: 1;
+		color: white;
+		text-style: bold;
+		background: transparent;
+	}
+
+	.buttons-container {
 		align: center top;
+		height: 3;
 		background: transparent;
 	}
 
@@ -602,10 +618,12 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 		header: str,
 		allow_skip: bool = False,
 		allow_reset: bool = False,
+		preview_header: str | None = None,
 	):
 		super().__init__(allow_skip, allow_reset)
 		self._group = group
 		self._header = header
+		self._preview_header = preview_header
 
 	async def run(self) -> Result[ValueT]:
 		assert TApp.app
@@ -617,18 +635,37 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 
 		yield Static(self._header, classes='header')
 
-		with Center():
+		if self._preview_header is None:
 			with Vertical(classes='content-container'):
-				with Horizontal(classes='buttons'):
+				with Horizontal(classes='buttons-container'):
 					for item in self._group.items:
 						yield Button(item.text, id=item.key)
+		else:
+			with Vertical():
+				with Horizontal(classes='buttons-container'):
+					for item in self._group.items:
+						yield Button(item.text, id=item.key)
+
+				yield Rule(orientation='horizontal')
+				yield Static(self._preview_header, classes='preview-header', id='preview_header')
+				yield ScrollableContainer(Label('', id='preview_content'))
 
 		yield Footer()
 
 	def on_mount(self) -> None:
-		self.update_selection()
+		self._update_selection()
 
-	def update_selection(self) -> None:
+	def action_focus_right(self) -> None:
+		if self._is_btn_focus():
+			self._group.focus_next()
+			self._update_selection()
+
+	def action_focus_left(self) -> None:
+		if self._is_btn_focus():
+			self._group.focus_prev()
+			self._update_selection()
+
+	def _update_selection(self) -> None:
 		focused = self._group.focus_item
 		buttons = self.query(Button)
 
@@ -639,23 +676,34 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 			if button.id == focused.key:
 				button.add_class('-active')
 				button.focus()
+
+				if self._preview_header is not None:
+					preview = self.query_one('#preview_content', Label)
+
+					if focused.preview_action is None:
+						preview.update('')
+					else:
+						text = focused.preview_action(focused)
+						if text is not None:
+							preview.update(text)
 			else:
 				button.remove_class('-active')
 
-	def action_focus_right(self) -> None:
-		self._group.focus_next()
-		self.update_selection()
+	def _is_btn_focus(self) -> bool:
+		buttons = self.query(Button)
+		for button in buttons:
+			if button.has_focus:
+				return True
 
-	def action_focus_left(self) -> None:
-		self._group.focus_prev()
-		self.update_selection()
+		return False
 
 	def on_key(self, event: Key) -> None:
 		if event.key == 'enter':
-			item = self._group.focus_item
-			if not item:
-				return None
-			_ = self.dismiss(Result(ResultType.Selection, _item=item))
+			if self._is_btn_focus():
+				item = self._group.focus_item
+				if not item:
+					return None
+				_ = self.dismiss(Result(ResultType.Selection, _item=item))
 
 
 class NotifyScreen(ConfirmationScreen[ValueT]):
@@ -804,7 +852,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		background: transparent;
 	}
 
-	.preview {
+	.preview-header {
 		text-align: center;
 		width: 100%;
 		padding-bottom: 1;
@@ -813,7 +861,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		background: transparent;
 	}
 
-	HorizontalScroll {
+	ScrollableContainer {
 		align: center top;
 		height: auto;
 		background: transparent;
@@ -895,14 +943,14 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 			if self._preview_header is None:
 				with Center():
 					with Vertical():
-						yield HorizontalScroll(DataTable(id='data_table'))
+						yield ScrollableContainer(DataTable(id='data_table'))
 
 			else:
 				with Vertical():
-					yield HorizontalScroll(DataTable(id='data_table'))
+					yield ScrollableContainer(DataTable(id='data_table'))
 					yield Rule(orientation='horizontal')
-					yield Static(self._preview_header, classes='preview', id='preview-header')
-					yield HorizontalScroll(Label('', id='preview_content'))
+					yield Static(self._preview_header, classes='preview-header', id='preview-header')
+					yield ScrollableContainer(Label('', id='preview_content'))
 
 		yield Footer()
 
@@ -1010,8 +1058,6 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
 	def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
 		if self._multi:
-			debug(f'Selected keys: {self._selected_keys}')
-
 			if len(self._selected_keys) == 0:
 				if not self._allow_skip:
 					return

@@ -55,10 +55,15 @@ class ConfigurationOutput:
 		header = f'{tr("The specified configuration will be applied")}. '
 		header += tr('Would you like to continue?') + '\n'
 
+		group = MenuItemGroup.yes_no()
+		group.set_preview_for_all(lambda x: self.user_config_to_json())
+
 		result = Confirmation(
+			group=group,
 			header=header,
 			allow_skip=False,
 			preset=True,
+			preview_header=tr('Configuration preview'),
 		).show()
 
 		if not result.get_value():

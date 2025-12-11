@@ -80,17 +80,23 @@ class Confirmation:
 	def __init__(
 		self,
 		header: str,
+		group: MenuItemGroup | None = None,
 		allow_skip: bool = True,
 		allow_reset: bool = False,
 		preset: bool = False,
+		preview_header: str | None = None,
 	):
 		self._header = header
 		self._allow_skip = allow_skip
 		self._allow_reset = allow_reset
 		self._preset = preset
+		self._preview_header = preview_header
 
-		self._group = MenuItemGroup.yes_no()
-		self._group.set_focus_by_value(preset)
+		if not group:
+			self._group = MenuItemGroup.yes_no()
+			self._group.set_focus_by_value(preset)
+		else:
+			self._group = group
 
 	def show(self) -> Result[bool]:
 		result: Result[bool] = tui.run(self)
@@ -98,10 +104,11 @@ class Confirmation:
 
 	async def _run(self) -> None:
 		result = await ConfirmationScreen[bool](
-			self._group,
+			group=self._group,
 			header=self._header,
 			allow_skip=self._allow_skip,
 			allow_reset=self._allow_reset,
+			preview_header=self._preview_header,
 		).run()
 
 		if result.type_ == ResultType.Reset:
