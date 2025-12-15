@@ -161,7 +161,6 @@ class OptionListScreen(BaseScreen[ValueT]):
             min-width: 15%;
             max-height: 1fr;
 
-            scrollbar-size-vertical: 1;
             padding-bottom: 3;
 
             background: transparent;
@@ -353,7 +352,6 @@ class SelectListScreen(BaseScreen[ValueT]):
             height: auto;
             max-height: 1fr;
 
-            scrollbar-size-vertical: 1;
             padding-bottom: 3;
 
             background: transparent;
@@ -991,8 +989,6 @@ class _AppInstance(App[ValueT]):
     }
 
     * {
-        scrollbar-size: 5 5;
-
         scrollbar-color: #6699FF;      /* Light Blue Thumb */
         scrollbar-background: #111111;  /* Very Dark Gray Track */
         scrollbar-corner-color: transparent;
