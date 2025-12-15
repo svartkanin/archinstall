@@ -981,6 +981,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 class _AppInstance(App[ValueT]):
     BINDINGS: ClassVar = [
         Binding('ctrl+h', 'trigger_help', 'Show/Hide help', show=True),
+        Binding('alt+h', 'trigger_help', 'Show/Hide help', show=True),
     ]
 
     CSS = """
@@ -989,7 +990,7 @@ class _AppInstance(App[ValueT]):
     }
 
     * {
-        scrollbar-size: 0 2;
+        scrollbar-size: 0 1;
 
         /* Use high contrast colors */
         scrollbar-color: white;
