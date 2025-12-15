@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from archinstall.lib.args import arch_config_handler
 from archinstall.lib.menu.helpers import Confirmation, Selection
-from archinstall.lib.models import Bootloader
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
@@ -43,48 +41,6 @@ def select_kernel(preset: list[str] = []) -> list[str]:
 			return []
 		case ResultType.Selection:
 			return result.get_values()
-
-
-def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
-	# Systemd is UEFI only
-	options = []
-	hidden_options = []
-	default = None
-	header = tr('Select which bootloader to install')
-
-	if arch_config_handler.args.skip_boot:
-		default = Bootloader.NO_BOOTLOADER
-	else:
-		hidden_options += [Bootloader.NO_BOOTLOADER]
-
-	if not SysInfo.has_uefi():
-		options += [Bootloader.Grub, Bootloader.Limine]
-		if not default:
-			default = Bootloader.Grub
-		header += '\n' + tr('UEFI is not detected and some options are disabled')
-	else:
-		options += [b for b in Bootloader if b not in hidden_options]
-		if not default:
-			default = Bootloader.Systemd
-
-	items = [MenuItem(o.value, value=o) for o in options]
-	group = MenuItemGroup(items)
-	group.set_default_by_value(default)
-	group.set_focus_by_value(preset)
-
-	result = Selection[Bootloader](
-		group,
-		header=header,
-		allow_skip=True,
-	).show()
-
-	match result.type_:
-		case ResultType.Skip:
-			return preset
-		case ResultType.Selection:
-			return result.get_value()
-		case ResultType.Reset:
-			raise ValueError('Unhandled result type')
 
 
 def ask_for_uki(preset: bool = True) -> bool:
