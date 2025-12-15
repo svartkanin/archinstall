@@ -751,9 +751,18 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		background: transparent;
 	}
 
-	ScrollableContainer {
+	.table-container {
+		align: center top;
+		width: 1fr;
+		height: 1fr;
+
+		background: transparent;
+	}
+
+	.table-container ScrollableContainer {
 		align: center top;
 		height: auto;
+
 		background: transparent;
 	}
 
@@ -832,11 +841,11 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
 			if self._preview_header is None:
 				with Center():
-					with Vertical():
+					with Vertical(classes='table-container'):
 						yield ScrollableContainer(DataTable(id='data_table'))
 
 			else:
-				with Vertical():
+				with Vertical(classes='table-container'):
 					yield ScrollableContainer(DataTable(id='data_table'))
 					yield Rule(orientation='horizontal')
 					yield Static(self._preview_header, classes='preview-header', id='preview-header')
@@ -1031,7 +1040,8 @@ class _AppInstance(App[ValueT]):
 
 	Footer {
 		dock: bottom;
-		background: #184956;
+		width: 100%;
+		background: transparent;
 		color: white;
 		height: 1;
 	}

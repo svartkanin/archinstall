@@ -173,7 +173,7 @@ def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
 	options = []
 	hidden_options = []
 	default = None
-	header = None
+	header = tr('Select bootloader to install')
 
 	if arch_config_handler.args.skip_boot:
 		default = Bootloader.NO_BOOTLOADER
@@ -184,7 +184,7 @@ def ask_for_bootloader(preset: Bootloader | None) -> Bootloader | None:
 		options += [Bootloader.Grub, Bootloader.Limine]
 		if not default:
 			default = Bootloader.Grub
-		header = tr('UEFI is not detected and some options are disabled')
+		header += '\n' + tr('UEFI is not detected and some options are disabled')
 	else:
 		options += [b for b in Bootloader if b not in hidden_options]
 		if not default:
