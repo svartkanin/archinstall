@@ -989,12 +989,11 @@ class _AppInstance(App[ValueT]):
     }
 
     * {
-        scrollbar-color: #6699FF;      /* Light Blue Thumb */
-        scrollbar-background: #111111;  /* Very Dark Gray Track */
-        scrollbar-corner-color: transparent;
+        scrollbar-size: 0 2;
 
-        scrollbar-color-hover: #FFFFFF; /* White Thumb on hover */
-        scrollbar-background-hover: #333333;
+        /* Use high contrast colors */
+        scrollbar-color: white;
+        scrollbar-background: black;
     }
 
     .app-header {
