@@ -982,6 +982,8 @@ class _AppInstance(App[ValueT]):
     BINDINGS: ClassVar = [
         Binding('ctrl+h', 'trigger_help', 'Show/Hide help', show=True),
         Binding('alt+h', 'trigger_help', 'Show/Hide help', show=True),
+        Binding('shift+h', 'trigger_help', 'Show/Hide help', show=True),
+        Binding('ctrl+u', 'trigger_help', 'Show/Hide help', show=True),
     ]
 
     CSS = """
