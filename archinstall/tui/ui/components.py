@@ -1025,7 +1025,7 @@ class _AppInstance(App[ValueT]):
     }
 
     Input {
-        border: tall #000000;
+        border: solid gray 50%;
         background: transparent;
         height: 3;
     }
