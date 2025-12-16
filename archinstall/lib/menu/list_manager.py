@@ -72,7 +72,6 @@ class ListManager[ValueT]:
 				header=prompt,
 				enable_filter=False,
 				allow_skip=False,
-				show_frame=False,
 			).show()
 
 			match result.type_:
@@ -112,7 +111,6 @@ class ListManager[ValueT]:
 			header=header,
 			enable_filter=False,
 			allow_skip=False,
-			show_frame=False,
 		).show()
 
 		match result.type_:

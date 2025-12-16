@@ -77,7 +77,6 @@ def select_locale_lang(preset: str | None = None) -> str | None:
 	result = Selection[str](
 		header=tr('Locale language'),
 		group=group,
-		show_frame=True,
 		enable_filter=True,
 	).show()
 
@@ -101,6 +100,7 @@ def select_locale_enc(preset: str | None = None) -> str | None:
 	result = Selection[str](
 		header=tr('Locale encoding'),
 		group=group,
+		enable_filter=True,
 	).show()
 
 	match result.type_:
@@ -131,7 +131,6 @@ def select_kb_layout(preset: str | None = None) -> str | None:
 	result = Selection[str](
 		header=tr('Keyboard layout'),
 		group=group,
-		show_frame=True,
 		enable_filter=True,
 	).show()
 

@@ -318,7 +318,6 @@ def select_mirror_regions(preset: list[MirrorRegion]) -> list[MirrorRegion]:
 		allow_reset=True,
 		allow_skip=True,
 		multi=True,
-		show_frame=True,
 		enable_filter=True,
 	).show()
 

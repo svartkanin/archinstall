@@ -225,7 +225,12 @@ def select_encryption_type(
 	group = MenuItemGroup(items)
 	group.set_focus_by_value(preset_value)
 
-	result = Selection[EncryptionType](group, header=tr('Select encryption type'), allow_skip=True, allow_reset=True, show_frame=False).show()
+	result = Selection[EncryptionType](
+		group,
+		header=tr('Select encryption type'),
+		allow_skip=True,
+		allow_reset=True,
+	).show()
 
 	match result.type_:
 		case ResultType.Reset:
@@ -257,7 +262,11 @@ def select_hsm(preset: Fido2Device | None = None) -> Fido2Device | None:
 	if fido_devices:
 		group = MenuHelper(data=fido_devices).create_menu_group()
 
-		result = Selection[Fido2Device](group, header=header, allow_skip=True, show_frame=False).show()
+		result = Selection[Fido2Device](
+			group,
+			header=header,
+			allow_skip=True,
+		).show()
 
 		match result.type_:
 			case ResultType.Reset:

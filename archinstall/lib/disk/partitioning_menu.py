@@ -420,7 +420,6 @@ class PartitioningList(ListManager[DiskSegment]):
 			group,
 			header=prompt,
 			allow_skip=False,
-			show_frame=False,
 		).show()
 
 		match result.type_:

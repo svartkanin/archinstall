@@ -31,7 +31,6 @@ def select_kernel(preset: list[str] = []) -> list[str]:
 		allow_skip=True,
 		allow_reset=True,
 		multi=True,
-		show_frame=False,
 	).show()
 
 	match result.type_:

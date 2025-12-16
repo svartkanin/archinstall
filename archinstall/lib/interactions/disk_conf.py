@@ -144,7 +144,6 @@ def select_disk_config(preset: DiskLayoutConfiguration | None = None) -> DiskLay
 		header=tr('Select a disk configuration'),
 		allow_skip=True,
 		allow_reset=True,
-		show_frame=False,
 	).show()
 
 	match result.type_:
@@ -266,7 +265,6 @@ def select_main_filesystem_format() -> FilesystemType:
 		group,
 		header=tr('Select main filesystem'),
 		allow_skip=False,
-		show_frame=False,
 	).show()
 
 	match result.type_:

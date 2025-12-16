@@ -30,7 +30,6 @@ class Selection[ValueT]:
 		preview_location: Literal['right', 'bottom'] | None = None,
 		multi: bool = False,
 		enable_filter: bool = False,
-		show_frame: bool = False,
 	):
 		self._header = header
 		self._group: MenuItemGroup = group
@@ -39,7 +38,6 @@ class Selection[ValueT]:
 		self._preview_location = preview_location
 		self._multi = multi
 		self._enable_filter = enable_filter
-		self._show_frame = show_frame
 
 	def show(self) -> Result[ValueT]:
 		result: Result[ValueT] = tui.run(self)
@@ -53,7 +51,6 @@ class Selection[ValueT]:
 				allow_skip=self._allow_skip,
 				allow_reset=self._allow_reset,
 				preview_location=self._preview_location,
-				show_frame=self._show_frame,
 				enable_filter=self._enable_filter,
 			).run()
 		else:
@@ -63,7 +60,6 @@ class Selection[ValueT]:
 				allow_skip=self._allow_skip,
 				allow_reset=self._allow_reset,
 				preview_location=self._preview_location,
-				show_frame=self._show_frame,
 				enable_filter=self._enable_filter,
 			).run()
 

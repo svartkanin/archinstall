@@ -128,7 +128,6 @@ class ManualNetworkConfig(ListManager[Nic]):
 			group,
 			header=header,
 			allow_skip=False,
-			show_frame=False,
 		).show()
 
 		match result.type_:
@@ -182,7 +181,6 @@ def ask_to_configure_network(preset: NetworkConfiguration | None) -> NetworkConf
 		header=tr('Choose network configuration'),
 		allow_reset=True,
 		allow_skip=True,
-		show_frame=False,
 	).show()
 
 	match result.type_:

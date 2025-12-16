@@ -104,7 +104,6 @@ class AbstractMenu[ValueT]:
 				allow_skip=False,
 				allow_reset=self._allow_reset,
 				preview_location='right',
-				show_frame=False,
 			).show()
 
 			match result.type_:

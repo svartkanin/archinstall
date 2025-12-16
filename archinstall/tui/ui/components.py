@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from collections.abc import Awaitable, Callable
 from typing import Any, ClassVar, Literal, TypeVar, override
 
@@ -174,15 +175,14 @@ class OptionListScreen(BaseScreen[ValueT]):
 		allow_skip: bool = False,
 		allow_reset: bool = False,
 		preview_location: Literal['right', 'bottom'] | None = None,
-		show_frame: bool = False,
 		enable_filter: bool = False,
 	):
 		super().__init__(allow_skip, allow_reset)
 		self._group = group
 		self._header = header
 		self._preview_location = preview_location
-		self._show_frame = False
 		self._filter = enable_filter
+		self._show_frame = False
 
 		self._options = self._get_options()
 
@@ -365,7 +365,6 @@ class SelectListScreen(BaseScreen[ValueT]):
 		allow_skip: bool = False,
 		allow_reset: bool = False,
 		preview_location: Literal['right', 'bottom'] | None = None,
-		show_frame: bool = False,
 		enable_filter: bool = False,
 	):
 		super().__init__(allow_skip, allow_reset)
@@ -979,8 +978,11 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
 
 class _AppInstance(App[ValueT]):
+	ENABLE_COMMAND_PALETTE = False
+
 	BINDINGS: ClassVar = [
 		Binding('f1', 'trigger_help', 'Show/Hide help', show=True),
+		Binding('ctrl+q', 'quit', 'Quit', show=True, priority=True),
 	]
 
 	CSS = """
@@ -1128,7 +1130,8 @@ class TApp:
 			raise result
 
 		if result is None:
-			raise ValueError('No result returned')
+			debug('App returned no result, assuming exit')
+			sys.exit(0)
 
 		return result
 

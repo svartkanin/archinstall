@@ -79,7 +79,6 @@ def ask_for_a_timezone(preset: str | None = None) -> str | None:
 		header=tr('Select timezone'),
 		allow_reset=True,
 		allow_skip=True,
-		show_frame=True,
 	).show()
 
 	match result.type_:
@@ -200,7 +199,6 @@ def ask_additional_packages_to_install(
 		allow_skip=True,
 		multi=True,
 		preview_location='right',
-		show_frame=False,
 		enable_filter=True,
 	).show()
 
