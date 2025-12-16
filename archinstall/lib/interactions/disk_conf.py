@@ -69,6 +69,7 @@ def select_devices(preset: list[BDevice] | None = []) -> list[BDevice]:
 		presets=presets,
 		allow_skip=True,
 		multi=True,
+		preview_location='bottom',
 		preview_header=tr('Partitions'),
 	).show()
 

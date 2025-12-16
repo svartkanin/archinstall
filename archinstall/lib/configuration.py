@@ -63,6 +63,7 @@ class ConfigurationOutput:
 			header=header,
 			allow_skip=False,
 			preset=True,
+			preview_location='bottom',
 			preview_header=tr('Configuration preview'),
 		).show()
 

@@ -80,12 +80,14 @@ class Confirmation:
 		allow_skip: bool = True,
 		allow_reset: bool = False,
 		preset: bool = False,
+		preview_location: Literal['bottom'] | None = None,
 		preview_header: str | None = None,
 	):
 		self._header = header
 		self._allow_skip = allow_skip
 		self._allow_reset = allow_reset
 		self._preset = preset
+		self._preview_location = preview_location
 		self._preview_header = preview_header
 
 		if not group:
@@ -104,6 +106,7 @@ class Confirmation:
 			header=self._header,
 			allow_skip=self._allow_skip,
 			allow_reset=self._allow_reset,
+			preview_location=self._preview_location,
 			preview_header=self._preview_header,
 		).run()
 
@@ -231,6 +234,7 @@ class Table[ValueT]:
 		allow_skip: bool = False,
 		loading_header: str | None = None,
 		multi: bool = False,
+		preview_location: Literal['bottom'] | None = None,
 		preview_header: str | None = None,
 	):
 		self._header = header
@@ -241,6 +245,7 @@ class Table[ValueT]:
 		self._allow_reset = allow_reset
 		self._multi = multi
 		self._presets = presets
+		self._preview_location = preview_location
 		self._preview_header = preview_header
 
 		if self._group is None and self._data_callback is None:
@@ -259,6 +264,7 @@ class Table[ValueT]:
 			allow_reset=self._allow_reset,
 			loading_header=self._loading_header,
 			multi=self._multi,
+			preview_location=self._preview_location,
 			preview_header=self._preview_header,
 		).run()
 

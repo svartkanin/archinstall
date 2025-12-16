@@ -253,7 +253,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 				with Container():
 					yield option_list
 					yield Rule(orientation=rule_orientation)
-					yield ScrollableContainer(Label('', id='preview_content'))
+					yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
 		if self._filter:
 			yield Input(placeholder='/filter', id='filter-input')
@@ -299,6 +299,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 
 		if item.preview_action is not None:
 			maybe_preview = item.preview_action(item)
+
 			if maybe_preview is not None:
 				preview_widget.update(maybe_preview)
 				return
@@ -445,7 +446,7 @@ class SelectListScreen(BaseScreen[ValueT]):
 				with Container():
 					yield selection_list
 					yield Rule(orientation=rule_orientation)
-					yield ScrollableContainer(Label('', id='preview_content'))
+					yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
 		if self._filter:
 			yield Input(placeholder='/filter', id='filter-input')
@@ -556,11 +557,13 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 		header: str,
 		allow_skip: bool = False,
 		allow_reset: bool = False,
+		preview_location: Literal['bottom'] | None = None,
 		preview_header: str | None = None,
 	):
 		super().__init__(allow_skip, allow_reset)
 		self._group = group
 		self._header = header
+		self._preview_location = preview_location
 		self._preview_header = preview_header
 
 	async def run(self) -> Result[ValueT]:
@@ -573,7 +576,7 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 
 		yield Label(self._header, classes='header-text', id='header_text')
 
-		if self._preview_header is None:
+		if self._preview_location is None:
 			with Vertical(classes='content-container'):
 				with Horizontal(classes='buttons-container'):
 					for item in self._group.items:
@@ -585,8 +588,9 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 						yield Button(item.text, id=item.key)
 
 				yield Rule(orientation='horizontal')
-				yield Label(self._preview_header, classes='preview-header', id='preview_header')
-				yield ScrollableContainer(Label('', id='preview_content'))
+				if self._preview_header is not None:
+					yield Label(self._preview_header, classes='preview-header', id='preview_header')
+				yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
 		yield Footer()
 
@@ -799,6 +803,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		allow_skip: bool = False,
 		loading_header: str | None = None,
 		multi: bool = False,
+		preview_location: Literal['bottom'] | None = None,
 		preview_header: str | None = None,
 	):
 		super().__init__(allow_skip, allow_reset)
@@ -807,6 +812,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		self._group_callback = group_callback
 		self._loading_header = loading_header
 		self._multi = multi
+		self._preview_location = preview_location
 		self._preview_header = preview_header
 
 		self._selected_keys: set[RowKey] = set()
@@ -842,7 +848,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
 			yield LoadingIndicator(id='loader')
 
-			if self._preview_header is None:
+			if self._preview_location is None:
 				with Center():
 					with Vertical(classes='table-container'):
 						yield ScrollableContainer(DataTable(id='data_table'))
@@ -851,8 +857,9 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 				with Vertical(classes='table-container'):
 					yield ScrollableContainer(DataTable(id='data_table'))
 					yield Rule(orientation='horizontal')
-					yield Label(self._preview_header, classes='preview-header', id='preview-header')
-					yield ScrollableContainer(Label('', id='preview_content'))
+					if self._preview_header is not None:
+						yield Label(self._preview_header, classes='preview-header', id='preview-header')
+					yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
 		yield Footer()
 
@@ -991,7 +998,7 @@ class _AppInstance(App[ValueT]):
 	}
 
 	* {
-		scrollbar-size: 0 1;
+		scrollbar-size: 1 1;
 
 		/* Use high contrast colors */
 		scrollbar-color: white;
