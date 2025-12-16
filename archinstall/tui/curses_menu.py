@@ -227,7 +227,8 @@ class AbstractViewport:
 
 			# 2 for frames, 1 for extra space start away from frame
 			# must align with def _adjust_entries
-			frame_end += 3	# 2 for frame
+			# 2 for frame
+			frame_end += 3
 
 			frame_height = len(rows) + 1
 			if frame_height > max_height:

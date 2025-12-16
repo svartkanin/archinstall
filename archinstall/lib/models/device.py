@@ -1065,10 +1065,6 @@ class LvmLayoutType(Enum):
 		match self:
 			case LvmLayoutType.Default:
 				return tr('Default layout')
-			# case LvmLayoutType.Manual:
-			#	return str(_('Manual configuration'))
-
-		raise ValueError(f'Unknown type: {self}')
 
 
 class _LvmVolumeGroupSerialization(TypedDict):

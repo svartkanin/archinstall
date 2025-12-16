@@ -78,7 +78,7 @@ class SubvolumeMenu(ListManager[SubvolumeModification]):
 		entry: SubvolumeModification | None,
 		data: list[SubvolumeModification],
 	) -> list[SubvolumeModification]:
-		if action == self._actions[0]:	# add
+		if action == self._actions[0]:
 			new_subvolume = self._add_subvolume()
 
 			if new_subvolume is not None:
@@ -86,15 +86,15 @@ class SubvolumeMenu(ListManager[SubvolumeModification]):
 				# was created we'll replace the existing one
 				data = [d for d in data if d.name != new_subvolume.name]
 				data += [new_subvolume]
-		elif entry is not None:  # edit
-			if action == self._actions[1]:	# edit subvolume
+		elif entry is not None:
+			if action == self._actions[1]:
 				new_subvolume = self._add_subvolume(entry)
 
 				if new_subvolume is not None:
 					# we'll remove the original subvolume and add the modified version
 					data = [d for d in data if d.name != entry.name and d.name != new_subvolume.name]
 					data += [new_subvolume]
-			elif action == self._actions[2]:  # delete
+			elif action == self._actions[2]:
 				data = [d for d in data if d != entry]
 
 		return data
