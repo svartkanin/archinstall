@@ -79,6 +79,7 @@ def ask_for_a_timezone(preset: str | None = None) -> str | None:
 		header=tr('Select timezone'),
 		allow_reset=True,
 		allow_skip=True,
+		enable_filter=True,
 	).show()
 
 	match result.type_:

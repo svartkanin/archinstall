@@ -11,7 +11,7 @@ from textual.containers import Center, Horizontal, ScrollableContainer, Vertical
 from textual.events import Key
 from textual.screen import Screen
 from textual.validation import Validator
-from textual.widgets import Button, DataTable, Footer, Input, Label, LoadingIndicator, OptionList, Rule, SelectionList, Static
+from textual.widgets import Button, DataTable, Footer, Input, Label, LoadingIndicator, OptionList, Rule, SelectionList
 from textual.widgets._data_table import RowKey
 from textual.widgets.option_list import Option
 from textual.widgets.selection_list import Selection
@@ -47,7 +47,7 @@ class BaseScreen(Screen[Result[ValueT]]):
 	def _compose_header(self) -> ComposeResult:
 		"""Compose the app header if global header text is available"""
 		if tui.global_header:
-			yield Static(tui.global_header, classes='app-header')
+			yield Label(tui.global_header, classes='app-header')
 
 
 class LoadingScreen(BaseScreen[None]):
@@ -96,7 +96,7 @@ class LoadingScreen(BaseScreen[None]):
 		with Center():
 			with Vertical(classes='dialog'):
 				if self._header:
-					yield Static(self._header, classes='header')
+					yield Label(self._header, classes='header')
 				yield Center(LoadingIndicator())
 
 		yield Footer()
@@ -235,7 +235,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 
 		with Vertical(classes='content-container'):
 			if self._header:
-				yield Static(self._header, classes='header-text', id='header_text')
+				yield Label(self._header, classes='header-text', id='header_text')
 
 			option_list = OptionList(id='option_list_widget')
 
@@ -294,7 +294,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 		if self._preview_location is None:
 			return None
 
-		preview_widget = self.query_one('#preview_content', Static)
+		preview_widget = self.query_one('#preview_content', Label)
 		item = self._group.find_by_id(item_id)
 
 		if item.preview_action is not None:
@@ -427,7 +427,7 @@ class SelectListScreen(BaseScreen[ValueT]):
 
 		with Vertical(classes='content-container'):
 			if self._header:
-				yield Static(self._header, classes='header-text', id='header_text')
+				yield Label(self._header, classes='header-text', id='header_text')
 
 			selection_list = SelectionList[MenuItem](id='select_list_widget')
 
@@ -496,7 +496,7 @@ class SelectListScreen(BaseScreen[ValueT]):
 		if self._preview_location is None:
 			return
 
-		preview_widget = self.query_one('#preview_content', Static)
+		preview_widget = self.query_one('#preview_content', Label)
 
 		if item.preview_action is not None:
 			maybe_preview = item.preview_action(item)
@@ -571,7 +571,7 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 	def compose(self) -> ComposeResult:
 		yield from self._compose_header()
 
-		yield Static(self._header, classes='header-text', id='header_text')
+		yield Label(self._header, classes='header-text', id='header_text')
 
 		if self._preview_header is None:
 			with Vertical(classes='content-container'):
@@ -585,7 +585,7 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 						yield Button(item.text, id=item.key)
 
 				yield Rule(orientation='horizontal')
-				yield Static(self._preview_header, classes='preview-header', id='preview_header')
+				yield Label(self._preview_header, classes='preview-header', id='preview_header')
 				yield ScrollableContainer(Label('', id='preview_content'))
 
 		yield Footer()
@@ -700,7 +700,7 @@ class InputScreen(BaseScreen[str]):
 	def compose(self) -> ComposeResult:
 		yield from self._compose_header()
 
-		yield Static(self._header, classes='header-text', id='header_text')
+		yield Label(self._header, classes='header-text', id='header_text')
 
 		with Center(classes='container-wrapper'):
 			with Vertical(classes='input-content'):
@@ -712,7 +712,7 @@ class InputScreen(BaseScreen[str]):
 					validators=self._validator,
 					validate_on=['submitted'],
 				)
-				yield Static('', classes='input-failure', id='input-failure')
+				yield Label('', classes='input-failure', id='input-failure')
 
 		yield Footer()
 
@@ -725,7 +725,7 @@ class InputScreen(BaseScreen[str]):
 			failures = [failure.description for failure in event.validation_result.failures if failure.description]
 			failure_out = ', '.join(failures)
 
-			self.query_one('#input-failure', Static).update(failure_out)
+			self.query_one('#input-failure', Label).update(failure_out)
 		else:
 			_ = self.dismiss(Result(ResultType.Selection, _data=event.value))
 
@@ -834,11 +834,11 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		yield from self._compose_header()
 
 		if self._header:
-			yield Static(self._header, classes='header-text', id='header_text')
+			yield Label(self._header, classes='header-text', id='header_text')
 
 		with Vertical(classes='content-container'):
 			if self._loading_header:
-				yield Static(self._loading_header, classes='header', id='loading-header')
+				yield Label(self._loading_header, classes='header', id='loading-header')
 
 			yield LoadingIndicator(id='loader')
 
@@ -851,7 +851,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 				with Vertical(classes='table-container'):
 					yield ScrollableContainer(DataTable(id='data_table'))
 					yield Rule(orientation='horizontal')
-					yield Static(self._preview_header, classes='preview-header', id='preview-header')
+					yield Label(self._preview_header, classes='preview-header', id='preview-header')
 					yield ScrollableContainer(Label('', id='preview_content'))
 
 		yield Footer()
@@ -874,8 +874,8 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
 	def _display_header(self, is_loading: bool) -> None:
 		try:
-			loading_header = self.query_one('#loading-header', Static)
-			header = self.query_one('#header', Static)
+			loading_header = self.query_one('#loading-header', Label)
+			header = self.query_one('#header', Label)
 			loading_header.display = is_loading
 			header.display = not is_loading
 		except Exception:
@@ -949,7 +949,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		if not item.preview_action:
 			return
 
-		preview_widget = self.query_one('#preview_content', Static)
+		preview_widget = self.query_one('#preview_content', Label)
 
 		maybe_preview = item.preview_action(item)
 		if maybe_preview is not None:
