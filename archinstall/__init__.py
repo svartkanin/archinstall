@@ -40,6 +40,7 @@ def _log_sys_info() -> None:
 
 
 def _check_online() -> None:
+	success = not wifi_handler.setup()
 	try:
 		ping('1.1.1.1')
 	except OSError as ex:

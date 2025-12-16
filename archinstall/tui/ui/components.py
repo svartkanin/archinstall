@@ -790,6 +790,8 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
 	LoadingIndicator {
 		height: auto;
+		padding-top: 2;
+
 		background: transparent;
 	}
 	"""
@@ -844,7 +846,8 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
 		with Vertical(classes='content-container'):
 			if self._loading_header:
-				yield Label(self._loading_header, classes='header', id='loading-header')
+				with Center():
+					yield Label(self._loading_header, classes='header', id='loading_header')
 
 			yield LoadingIndicator(id='loader')
 
@@ -880,13 +883,11 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		self._put_data_to_table(table, group)
 
 	def _display_header(self, is_loading: bool) -> None:
-		try:
-			loading_header = self.query_one('#loading-header', Label)
-			header = self.query_one('#header', Label)
-			loading_header.display = is_loading
-			header.display = not is_loading
-		except Exception:
-			pass
+		loading_header = self.query_one('#loading_header', Label)
+		header = self.query_one('#header_text', Label)
+
+		loading_header.display = is_loading
+		header.display = not is_loading
 
 	def _put_data_to_table(self, table: DataTable[ValueT], group: MenuItemGroup) -> None:
 		items = group.items
