@@ -112,6 +112,11 @@ class MenuItemGroup:
 		if self.focus_item not in self.items:
 			raise ValueError(f'Selected item not in menu: {self.focus_item}')
 
+	@classmethod
+	def from_objects(cls, items: list[Any]) -> Self:
+		items = [MenuItem(str(id(item)), value=item) for item in items]
+		return cls(items)
+
 	def add_item(self, item: MenuItem) -> None:
 		self._menu_items.append(item)
 		delattr(self, 'items')  # resetting the cache

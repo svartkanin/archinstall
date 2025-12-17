@@ -293,8 +293,7 @@ def select_partitions_to_encrypt(
 	avail_partitions = [p for p in partitions if not p.exists()]
 
 	if avail_partitions:
-		items = [MenuItem(str(id(partition)), value=partition) for partition in partitions]
-		group = MenuItemGroup(items)
+		group = MenuItemGroup.from_objects(partitions)
 		group.set_selected_by_value(preset)
 
 		result = Table[PartitionModification](
@@ -323,8 +322,7 @@ def select_lvm_vols_to_encrypt(
 	volumes: list[LvmVolume] = lvm_config.get_all_volumes()
 
 	if volumes:
-		items = [MenuItem(str(id(volume)), value=volume) for volume in volumes]
-		group = MenuItemGroup(items)
+		group = MenuItemGroup.from_objects(volumes)
 		group.set_selected_by_value(preset)
 
 		result = Table[LvmVolume](

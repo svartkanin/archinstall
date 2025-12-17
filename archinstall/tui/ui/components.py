@@ -883,11 +883,13 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 		self._put_data_to_table(table, group)
 
 	def _display_header(self, is_loading: bool) -> None:
-		loading_header = self.query_one('#loading_header', Label)
-		header = self.query_one('#header_text', Label)
+		if self._loading_header:
+			loading_header = self.query_one('#loading_header', Label)
+			loading_header.display = is_loading
 
-		loading_header.display = is_loading
-		header.display = not is_loading
+		if self._header:
+			header = self.query_one('#header_text', Label)
+			header.display = not is_loading
 
 	def _put_data_to_table(self, table: DataTable[ValueT], group: MenuItemGroup) -> None:
 		items = group.items
