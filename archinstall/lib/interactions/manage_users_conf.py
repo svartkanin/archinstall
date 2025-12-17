@@ -94,7 +94,7 @@ class UserList(ListManager[User]):
 		prompt = f'{header}\n' + tr('Should "{}" be a superuser (sudo)?\n').format(username)
 
 		result = Confirmation(
-			header=header,
+			header=prompt,
 			allow_skip=False,
 			preset=True,
 		).show()
