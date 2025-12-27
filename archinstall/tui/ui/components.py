@@ -544,7 +544,7 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 	}
 
 	Button.-active {
-		background: #1793D1;
+		background: blue;
 		color: white;
 		border: none;
 		text-style: none;
@@ -1013,8 +1013,8 @@ class _AppInstance(App[ValueT]):
 		height: auto;
 		width: 100%;
 		content-align: center middle;
-		background: #1793D1;
-		color: black;
+		background: blue;
+		color: white;
 		text-style: bold;
 	}
 
@@ -1056,7 +1056,7 @@ class _AppInstance(App[ValueT]):
 	}
 
 	Input:focus {
-		border: solid #1793D1;
+		border: solid blue;
 	}
 
 	Footer {
