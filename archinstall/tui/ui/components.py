@@ -57,16 +57,15 @@ class LoadingScreen(BaseScreen[None]):
 		background: transparent;
 	}
 
-	.dialog {
-		align: center middle;
-		width: 100%;
-		border: none;
-		background: transparent;
-	}
+	.content-container {
+		width: 1fr;
+		height: 1fr;
+		max-height: 100%;
 
-	.header {
-		text-align: center;
-		margin-bottom: 1;
+		margin-top: 2;
+		margin-bottom: 2;
+
+		background: transparent;
 	}
 
 	LoadingIndicator {
@@ -93,11 +92,12 @@ class LoadingScreen(BaseScreen[None]):
 	def compose(self) -> ComposeResult:
 		yield from self._compose_header()
 
-		with Center():
-			with Vertical(classes='dialog'):
-				if self._header:
-					yield Label(self._header, classes='header')
-				yield Center(LoadingIndicator())
+		with Vertical(classes='content-container'):
+			if self._header:
+				with Center():
+					yield Label(self._header, classes='header', id='loading_header')
+
+			yield Center(LoadingIndicator())
 
 		yield Footer()
 
@@ -129,43 +129,49 @@ class OptionListScreen(BaseScreen[ValueT]):
 	]
 
 	CSS = """
-		OptionListScreen {
-			align-horizontal: center;
-			align-vertical: middle;
-			background: transparent;
-		}
+	OptionListScreen {
+		align-horizontal: center;
+		align-vertical: middle;
+		background: transparent;
+	}
 
-		.content-container {
-			width: 1fr;
-			height: 1fr;
-			max-height: 100%;
+	.content-container {
+		width: 1fr;
+		height: 1fr;
+		max-height: 100%;
 
-			margin-top: 2;
-			margin-left: 2;
+		margin-top: 2;
+		margin-left: 2;
 
-			background: transparent;
-		}
+		background: transparent;
+	}
 
-		.list-container {
-			width: auto;
-			height: auto;
-			max-height: 100%;
+	.list-container {
+		width: auto;
+		height: auto;
+		max-height: 100%;
 
-			padding-bottom: 3;
+		padding-bottom: 3;
 
-			background: transparent;
-		}
+		background: transparent;
+	}
 
-		OptionList {
-			width: auto;
-			height: auto;
-			min-width: 15%;
-			max-height: 1fr;
+	OptionList {
+		width: auto;
+		height: auto;
+		min-width: 15%;
+		max-height: 1fr;
 
-			padding-bottom: 3;
+		padding-bottom: 3;
 
-			background: transparent;
-		}
+		background: transparent;
+	}
+
+	OptionList > .option-list--option-highlighted {
+		background: blue;
+		color: white;
+		text-style: bold;
+	}
 	"""
 
 	def __init__(
@@ -320,43 +326,49 @@ class SelectListScreen(BaseScreen[ValueT]):
 	]
 
 	CSS = """
-		SelectListScreen {
-			align-horizontal: center;
-			align-vertical: middle;
-			background: transparent;
-		}
+	SelectListScreen {
+		align-horizontal: center;
+		align-vertical: middle;
+		background: transparent;
+	}
 
-		.content-container {
-			width: 1fr;
-			height: 1fr;
-			max-height: 100%;
+	.content-container {
+		width: 1fr;
+		height: 1fr;
+		max-height: 100%;
 
-			margin-top: 2;
-			margin-left: 2;
+		margin-top: 2;
+		margin-left: 2;
 
-			background: transparent;
-		}
+		background: transparent;
+	}
 
-		.list-container {
-			width: auto;
-			height: auto;
-			min-width: 15%;
-			max-height: 1fr;
+	.list-container {
+		width: auto;
+		height: auto;
+		min-width: 15%;
+		max-height: 1fr;
 
-			padding-bottom: 3;
+		padding-bottom: 3;
 
-			background: transparent;
-		}
+		background: transparent;
+	}
 
-		SelectionList {
-			width: auto;
-			height: auto;
-			max-height: 1fr;
+	SelectionList {
+		width: auto;
+		height: auto;
+		max-height: 1fr;
 
-			padding-bottom: 3;
+		padding-bottom: 3;
 
-			background: transparent;
-		}
+		background: transparent;
+	}
+
+	SelectionList > .option-list--option-highlighted {
+		background: blue;
+		color: white;
+		text-style: bold;
+	}
 	"""
 
 	def __init__(
