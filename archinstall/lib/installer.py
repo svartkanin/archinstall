@@ -51,7 +51,7 @@ from .plugins import plugins
 from .storage import storage
 
 # Any package that the Installer() is responsible for (optional and the default ones)
-__packages__ = ['base', 'base-devel', 'linux-firmware', 'linux', 'linux-lts', 'linux-zen', 'linux-hardened']
+__packages__ = ['base', 'sudo', 'linux-firmware', 'linux', 'linux-lts', 'linux-zen', 'linux-hardened']
 
 # Additional packages that are installed if the user is running the Live ISO with accessibility tools enabled
 __accessibility_packages__ = ['brltty', 'espeakup', 'alsa-utils']
@@ -193,9 +193,16 @@ class Installer:
 		else:
 			info(tr('Skipping waiting for automatic time sync (this can cause issues if time is out of sync during installation)'))
 
-		info('Waiting for automatic mirror selection (reflector) to complete.')
-		while self._service_state('reflector') not in ('dead', 'failed', 'exited'):
-			time.sleep(1)
+		if not arch_config_handler.args.offline:
+			info('Waiting for automatic mirror selection (reflector) to complete.')
+			for _ in range(60):
+				if self._service_state('reflector') in ('dead', 'failed', 'exited'):
+					break
+				time.sleep(1)
+			else:
+				warn('Reflector did not complete within 60 seconds, continuing anyway...')
+		else:
+			info('Skipped reflector...')
 
 		# info('Waiting for pacman-init.service to complete.')
 		# while self._service_state('pacman-init') not in ('dead', 'failed', 'exited'):
@@ -674,6 +681,18 @@ class Installer:
 				if hasattr(plugin, 'on_service'):
 					plugin.on_service(service)
 
+	def disable_service(self, services_disable: str | list[str]) -> None:
+		if isinstance(services_disable, str):
+			services_disable = [services_disable]
+
+		for service in services_disable:
+			info(f'Disabling service {service}')
+
+			try:
+				SysCommand(f'systemctl --root={self.target} disable {service}')
+			except SysCallError as err:
+				raise ServiceException(f'Unable to disable service {service}: {err}')
+
 	def run_command(self, cmd: str, peek_output: bool = False) -> SysCommand:
 		return SysCommand(f'arch-chroot -S {self.target} {cmd}', peek_output=peek_output)
 
@@ -754,6 +773,14 @@ class Installer:
 					self.enable_service(['systemd-networkd', 'systemd-resolved'])
 
 		return True
+
+	def configure_nm_iwd(self) -> None:
+		# Create NetworkManager config directory and write iwd backend conf
+		nm_conf_dir = self.target / 'etc/NetworkManager/conf.d'
+		nm_conf_dir.mkdir(parents=True, exist_ok=True)
+
+		iwd_backend_conf = nm_conf_dir / 'wifi_backend.conf'
+		iwd_backend_conf.write_text('[device]\nwifi.backend=iwd\n')
 
 	def mkinitcpio(self, flags: list[str]) -> bool:
 		for plugin in plugins.values():
@@ -966,12 +993,17 @@ class Installer:
 		if kind == 'zram':
 			info('Setting up swap on zram')
 			self.pacman.strap('zram-generator')
-
+			# Get RAM size in MB from hardware info
+			ram_kb = SysInfo.mem_total()
+			# Convert KB to MB and divide by 2, with minimum of 4096 MB
+			size_mb = max(ram_kb // 2048, 4096)
+			info(f'Zram size: {size_mb} from RAM: {ram_kb}')
 			# We could use the default example below, but maybe not the best idea: https://github.com/archlinux/archinstall/pull/678#issuecomment-962124813
 			# zram_example_location = '/usr/share/doc/zram-generator/zram-generator.conf.example'
 			# shutil.copy2(f"{self.target}{zram_example_location}", f"{self.target}/usr/lib/systemd/zram-generator.conf")
 			with open(f'{self.target}/etc/systemd/zram-generator.conf', 'w') as zram_conf:
 				zram_conf.write('[zram0]\n')
+				zram_conf.write(f'zram-size = {size_mb}\n')
 
 			self.enable_service('systemd-zram-setup@zram0.service')
 

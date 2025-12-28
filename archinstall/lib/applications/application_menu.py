@@ -2,7 +2,7 @@ from typing import override
 
 from archinstall.lib.menu.abstract_menu import AbstractSubMenu
 from archinstall.lib.menu.helpers import Confirmation, Selection
-from archinstall.lib.models.application import ApplicationConfiguration, Audio, AudioConfiguration, BluetoothConfiguration
+from archinstall.lib.models.application import ApplicationConfiguration, Audio, AudioConfiguration, BluetoothConfiguration, PrintServiceConfiguration
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.ui.menu_item import MenuItem, MenuItemGroup
 from archinstall.tui.ui.result import ResultType
@@ -47,13 +47,19 @@ class ApplicationMenu(AbstractSubMenu[ApplicationConfiguration]):
 				preview_action=self._prev_audio,
 				key='audio_config',
 			),
+			MenuItem(
+				text=tr('Print service'),
+				action=select_print_service,
+				preview_action=self._prev_print_service,
+				key='print_service_config',
+			),
 		]
 
 	def _prev_bluetooth(self, item: MenuItem) -> str | None:
 		if item.value is not None:
 			bluetooth_config: BluetoothConfiguration = item.value
 
-			output = 'Bluetooth: '
+			output = f'{tr("Bluetooth")}: '
 			output += tr('Enabled') if bluetooth_config.enabled else tr('Disabled')
 			return output
 		return None
@@ -62,6 +68,15 @@ class ApplicationMenu(AbstractSubMenu[ApplicationConfiguration]):
 		if item.value is not None:
 			config: AudioConfiguration = item.value
 			return f'{tr("Audio")}: {config.audio.value}'
+		return None
+
+	def _prev_print_service(self, item: MenuItem) -> str | None:
+		if item.value is not None:
+			print_service_config: PrintServiceConfiguration = item.value
+
+			output = f'{tr("Print service")}: '
+			output += tr('Enabled') if print_service_config.enabled else tr('Disabled')
+			return output
 		return None
 
 
@@ -77,8 +92,27 @@ def select_bluetooth(preset: BluetoothConfiguration | None) -> BluetoothConfigur
 
 	match result.type_:
 		case ResultType.Selection:
-			enabled = result.item() == MenuItem.yes()
-			return BluetoothConfiguration(enabled)
+			return BluetoothConfiguration(result.get_value())
+		case ResultType.Skip:
+			return preset
+		case _:
+			raise ValueError('Unhandled result type')
+
+
+def select_print_service(preset: PrintServiceConfiguration | None) -> PrintServiceConfiguration | None:
+	header = tr('Would you like to configure the print service?') + '\n'
+	preset_val = preset.enabled if preset else False
+
+	result = Confirmation(
+		header=header,
+		allow_skip=True,
+		preset=preset_val,
+	).show()
+
+	match result.type_:
+		case ResultType.Selection:
+			result.get_value()
+			return PrintServiceConfiguration(result.get_value())
 		case ResultType.Skip:
 			return preset
 		case _:
