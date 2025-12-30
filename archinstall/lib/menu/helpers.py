@@ -7,6 +7,7 @@ from archinstall.lib.translationhandler import tr
 from archinstall.tui.ui.components import (
 	ConfirmationScreen,
 	InputScreen,
+	ListViewScreen,
 	LoadingScreen,
 	NotifyScreen,
 	OptionListScreen,
@@ -30,6 +31,7 @@ class Selection[ValueT]:
 		preview_location: Literal['right', 'bottom'] | None = None,
 		multi: bool = False,
 		enable_filter: bool = False,
+		test=False,
 	):
 		self._header = header
 		self._group: MenuItemGroup = group
@@ -38,6 +40,7 @@ class Selection[ValueT]:
 		self._preview_location = preview_location
 		self._multi = multi
 		self._enable_filter = enable_filter
+		self._test = test
 
 	def show(self) -> Result[ValueT]:
 		result: Result[ValueT] = tui.run(self)
@@ -54,14 +57,24 @@ class Selection[ValueT]:
 				enable_filter=self._enable_filter,
 			).run()
 		else:
-			result = await OptionListScreen[ValueT](
-				self._group,
-				header=self._header,
-				allow_skip=self._allow_skip,
-				allow_reset=self._allow_reset,
-				preview_location=self._preview_location,
-				enable_filter=self._enable_filter,
-			).run()
+			if self._test:
+				result = await ListViewScreen[ValueT](
+					self._group,
+					header=self._header,
+					allow_skip=self._allow_skip,
+					allow_reset=self._allow_reset,
+					preview_location=self._preview_location,
+					enable_filter=self._enable_filter,
+				).run()
+			else:
+				result = await OptionListScreen[ValueT](
+					self._group,
+					header=self._header,
+					allow_skip=self._allow_skip,
+					allow_reset=self._allow_reset,
+					preview_location=self._preview_location,
+					enable_filter=self._enable_filter,
+				).run()
 
 		if result.type_ == ResultType.Reset:
 			confirmed = await _confirm_reset()
