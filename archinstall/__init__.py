@@ -106,9 +106,8 @@ def main() -> int:
 			new_version = check_version_upgrade()
 
 			if new_version:
-				tui.global_header = f'{tui.global_header} {new_version}'
-				info(new_version)
-				time.sleep(3)
+				tui.global_header = f'{tui.global_header} ({new_version})'
+				debug(new_version)
 
 	if running_from_host():
 		# log which mode we are using
