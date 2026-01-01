@@ -118,214 +118,6 @@ class LoadingScreen(BaseScreen[None]):
         _ = self.dismiss()
 
 
-class ListViewScreen(BaseScreen[ValueT]):
-    """
-    List single selection menu
-    """
-
-    BINDINGS: ClassVar = [
-        Binding('j', 'cursor_down', 'Down', show=False),
-        Binding('k', 'cursor_up', 'Up', show=False),
-        Binding('/', 'search', 'Search', show=False),
-    ]
-
-    CSS = """
-    ListViewScreen {
-        align-horizontal: center;
-        align-vertical: middle;
-        background: transparent;
-    }
-
-    .content-container {
-        width: 1fr;
-        height: 1fr;
-        max-height: 100%;
-
-        margin-top: 2;
-        margin-left: 2;
-
-        background: transparent;
-    }
-
-    .list-container {
-        width: auto;
-        height: auto;
-        max-height: 100%;
-
-        padding-bottom: 3;
-
-        background: transparent;
-    }
-
-    ListView {
-        width: auto;
-        height: auto;
-        min-width: 15%;
-        max-height: 1fr;
-
-        padding-bottom: 3;
-
-        background: transparent;
-    }
-    """
-
-    def __init__(
-        self,
-        group: MenuItemGroup,
-        header: str | None = None,
-        allow_skip: bool = False,
-        allow_reset: bool = False,
-        preview_location: Literal['right', 'bottom'] | None = None,
-        enable_filter: bool = False,
-    ):
-        super().__init__(allow_skip, allow_reset)
-        self._group = group
-        self._header = header
-        self._preview_location = preview_location
-        self._filter = enable_filter
-        self._show_frame = False
-
-        self._items = self._get_items()
-
-    def action_cursor_down(self) -> None:
-        list_view = self.query_one(ListView)
-        if list_view.has_focus:
-            list_view.action_cursor_down()
-
-    def action_cursor_up(self) -> None:
-        list_view = self.query_one(ListView)
-        if list_view.has_focus:
-            list_view.action_cursor_up()
-
-    def action_search(self) -> None:
-        if self.query_one(ListView).has_focus:
-            if self._filter:
-                self._handle_search_action()
-
-    @override
-    def action_cancel_operation(self) -> None:
-        if self._filter and self.query_one(Input).has_focus:
-            self._handle_search_action()
-        else:
-            super().action_cancel_operation()
-
-    def _handle_search_action(self) -> None:
-        search_input = self.query_one(Input)
-
-        if search_input.has_focus:
-            self.query_one(ListView).focus()
-        else:
-            search_input.focus()
-
-    async def run(self) -> Result[ValueT]:
-        assert TApp.app
-        return await TApp.app.show(self)
-
-    def _get_items(self) -> list[ListItem]:
-        items = []
-
-        for item in self._group.get_enabled_items():
-            disabled = True if item.read_only else False
-            items.append(
-                ListItem(
-                    name=item.text,
-                    id=item.get_id(),
-                    disabled=disabled,
-                )
-            )
-
-        return items
-
-    @override
-    def compose(self) -> ComposeResult:
-        yield from self._compose_header()
-
-        with Vertical(classes='content-container'):
-            if self._header:
-                yield Label(self._header, classes='header-text', id='header_text')
-
-            list_view = ListView(id='list_widget')
-
-            list_view = ListView(
-                ListItem(Label('One')),
-                ListItem(Label('Two')),
-                ListItem(Label('Three')),
-            )
-
-            if not self._show_frame:
-                list_view.classes = 'no-border'
-
-            if self._preview_location is None:
-                with Center():
-                    with Vertical(classes='list-container'):
-                        yield list_view
-            else:
-                Container = Horizontal if self._preview_location == 'right' else Vertical
-                rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
-
-                with Container():
-                    yield list_view
-                    yield Rule(orientation=rule_orientation)
-                    yield ScrollableContainer(Label('', id='preview_content', markup=False))
-
-        if self._filter:
-            yield Input(placeholder='/filter', id='filter-input')
-
-        yield Footer()
-
-    def on_mount(self) -> None:
-        self._update_items(self._items)
-        self.query_one(ListView).focus()
-
-    def on_input_changed(self, event: Input.Changed) -> None:
-        search_term = event.value.lower()
-        self._group.set_filter_pattern(search_term)
-        filtered_items = self._get_items()
-        self._update_items(filtered_items)
-
-    def _update_items(self, items: list[ListItem]) -> None:
-        list_view = self.query_one(ListView)
-        # list_view.clear()
-        # list_view.insert(0, items)
-
-        # list_view.highlighted_child = self._group.get_focused_index()
-
-        if focus_item := self._group.focus_item:
-            self._set_preview(focus_item.get_id())
-
-    # def on_option_list_option_selected(self, event: ListView.Highlighted) -> None:
-    # item = event.item
-    # if not item:
-    # return
-    #
-    # if item.id is not None:
-    # item = self._group.find_by_id(item.id)
-    # _ = self.dismiss(Result(ResultType.Selection, _item=item))
-    #
-    # def on_option_list_option_highlighted(self, event: ListView.Highlighted) -> None:
-    # item = event.item
-    # if not item:
-    # return
-    #
-    # self._set_preview(item.id)
-
-    def _set_preview(self, item_id: str) -> None:
-        if self._preview_location is None:
-            return None
-
-        preview_widget = self.query_one('#preview_content', Label)
-        item = self._group.find_by_id(item_id)
-
-        if item.preview_action is not None:
-            maybe_preview = item.preview_action(item)
-
-            if maybe_preview is not None:
-                preview_widget.update(maybe_preview)
-                return
-
-        preview_widget.update('')
-
-
 class OptionListScreen(BaseScreen[ValueT]):
     """
     List single selection menu
@@ -495,6 +287,8 @@ class OptionListScreen(BaseScreen[ValueT]):
         if focus_item := self._group.focus_item:
             self._set_preview(focus_item.get_id())
 
+        self._set_cursor()
+
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
         selected_option = event.option
         if selected_option.id is not None:
@@ -505,15 +299,22 @@ class OptionListScreen(BaseScreen[ValueT]):
         if event.option.id:
             self._set_preview(event.option.id)
 
-        option_list = event.option_list
+        self._set_cursor()
+
+    def _set_cursor(self) -> None:
+        option_list = self.query_one(OptionList)
+        index = option_list.highlighted
+
+        if not index:
+            return
 
         # set the hardware cursor on the highlighted line (for screen readers)
-        target_y = option_list.region.y + event.option_index - option_list.scroll_offset.y
+        target_y = option_list.region.y + index - option_list.scroll_offset.y
 
-        debug(f'Index: {event.option_index}')
+        debug(f'Index: {index}')
         debug(f'Region: {option_list.region}')
         debug(f'Scroll offset: {option_list.scroll_offset}')
-        debug(f'Target Y: {target_y}')
+        debug(f'Target_Y: {target_y}')
 
         self.app.cursor_position = Offset(option_list.region.x, target_y)
 
@@ -612,17 +413,17 @@ class SelectListScreen(BaseScreen[ValueT]):
         self._options: list[Selection[MenuItem]] = self._get_selections()
 
     def action_cursor_down(self) -> None:
-        select_list = self.query_one(OptionList)
+        select_list = self.query_one(SelectionList)
         if select_list.has_focus:
             select_list.action_cursor_down()
 
     def action_cursor_up(self) -> None:
-        select_list = self.query_one(OptionList)
+        select_list = self.query_one(SelectionList)
         if select_list.has_focus:
             select_list.action_cursor_up()
 
     def action_search(self) -> None:
-        if self.query_one(OptionList).has_focus:
+        if self.query_one(SelectionList).has_focus:
             if self._filter:
                 self._handle_search_action()
 
@@ -637,7 +438,7 @@ class SelectListScreen(BaseScreen[ValueT]):
         search_input = self.query_one(Input)
 
         if search_input.has_focus:
-            self.query_one(OptionList).focus()
+            self.query_one(SelectionList).focus()
         else:
             search_input.focus()
 
