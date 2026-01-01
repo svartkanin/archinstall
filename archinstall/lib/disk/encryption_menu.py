@@ -122,8 +122,8 @@ class DiskEncryptionMenu(AbstractSubMenu[DiskEncryption]):
 		return False
 
 	@override
-	def run(self, additional_title: str | None = None) -> DiskEncryption | None:
-		enc_config = super().run(additional_title=additional_title)
+	def run(self) -> DiskEncryption | None:
+		enc_config = super().run()
 		if enc_config is None:
 			return None
 

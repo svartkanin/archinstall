@@ -94,8 +94,8 @@ class DiskLayoutConfigurationMenu(AbstractSubMenu[DiskMenuConfig]):
 		]
 
 	@override
-	def run(self, additional_title: str | None = None) -> DiskLayoutConfiguration | None:  # type: ignore[override]
-		config: DiskMenuConfig | None = super().run(additional_title=additional_title)
+	def run(self) -> DiskLayoutConfiguration | None:  # type: ignore[override]
+		config: DiskMenuConfig | None = super().run()
 		if config is None:
 			return None
 

@@ -28,8 +28,8 @@ class ApplicationMenu(AbstractSubMenu[ApplicationConfiguration]):
 		)
 
 	@override
-	def run(self, additional_title: str | None = None) -> ApplicationConfiguration:
-		super().run(additional_title=additional_title)
+	def run(self) -> ApplicationConfiguration:
+		super().run()
 		return self._app_config
 
 	def _define_menu_options(self) -> list[MenuItem]:

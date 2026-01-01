@@ -290,8 +290,8 @@ class MirrorMenu(AbstractSubMenu[MirrorConfiguration]):
 		return output.strip()
 
 	@override
-	def run(self, additional_title: str | None = None) -> MirrorConfiguration | None:
-		return super().run(additional_title=additional_title)
+	def run(self) -> MirrorConfiguration | None:
+		return super().run()
 
 
 def select_mirror_regions(preset: list[MirrorRegion]) -> list[MirrorRegion]:

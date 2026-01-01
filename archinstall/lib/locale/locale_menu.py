@@ -51,8 +51,8 @@ class LocaleMenu(AbstractSubMenu[LocaleConfiguration]):
 		]
 
 	@override
-	def run(self, additional_title: str | None = None) -> LocaleConfiguration:
-		config = super().run(additional_title=additional_title)
+	def run(self) -> LocaleConfiguration:
+		config = super().run()
 
 		if config is None:
 			config = LocaleConfiguration.default()

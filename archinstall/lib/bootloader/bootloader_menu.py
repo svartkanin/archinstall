@@ -86,11 +86,8 @@ class BootloaderMenu(AbstractSubMenu[BootloaderConfiguration]):
 		return tr('Will install to custom location with NVRAM entry')
 
 	@override
-	def run(
-		self,
-		additional_title: str | None = None,
-	) -> BootloaderConfiguration:
-		super().run(additional_title=additional_title)
+	def run(self) -> BootloaderConfiguration:
+		super().run()
 		return self._bootloader_conf
 
 	def _select_bootloader(self, preset: Bootloader | None) -> Bootloader | None:
@@ -140,7 +137,7 @@ class BootloaderMenu(AbstractSubMenu[BootloaderConfiguration]):
 			+ tr('This installs the bootloader to /EFI/BOOT/BOOTX64.EFI (or similar) which is useful for:')
 			+ '\n\n  • '
 			+ tr('Firmware that does not properly support NVRAM boot entries like most MSI motherboards,')
-			+ '\n    '
+			+ '\n	 '
 			+ tr('most Apple Macs, many laptops...')
 			+ '\n  • '
 			+ tr('USB drives or other portable external media.')
