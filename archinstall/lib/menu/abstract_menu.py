@@ -94,13 +94,12 @@ class AbstractMenu[ValueT]:
 	def _is_config_valid(self) -> bool:
 		return True
 
-	def run(self, additional_title: str | None = None) -> ValueT | None:
+	def run(self) -> ValueT | None:
 		self._sync_from_config()
 
 		while True:
 			result = Selection[ValueT](
 				group=self._menu_item_group,
-				header=additional_title,
 				allow_skip=False,
 				allow_reset=self._allow_reset,
 				preview_location='right',

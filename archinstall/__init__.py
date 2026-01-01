@@ -75,8 +75,9 @@ def check_version_upgrade() -> str | None:
 		debug('No archinstall upgrades found')
 		return None
 
+	debug(f'Archinstall latest: {upgrade}')
+
 	text = tr('New version available') + f': {upgrade}'
-	info(text)
 	return text
 
 
@@ -107,7 +108,6 @@ def main() -> int:
 
 			if new_version:
 				tui.global_header = f'{tui.global_header} ({new_version})'
-				debug(new_version)
 
 	if running_from_host():
 		# log which mode we are using

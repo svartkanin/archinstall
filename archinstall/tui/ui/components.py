@@ -513,8 +513,12 @@ class OptionListScreen(BaseScreen[ValueT]):
 		#	event.option_index -
 		#	option_list.scroll_offset.y
 		# )
-		#
+
 		# self.app.cursor_position = Offset(option_list.screen_offset.x, y_coord)
+
+		debug(f'Index: {event.option_index}')
+		debug(f'Region: {option_list.region}')
+		debug(f'Scroll offset: {option_list.scroll_offset}')
 
 		target_y = option_list.region.y + event.option_index - int(option_list.scroll_offset.y)
 
