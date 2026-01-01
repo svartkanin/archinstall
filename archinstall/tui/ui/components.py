@@ -118,7 +118,6 @@ class LoadingScreen(BaseScreen[None]):
 		_ = self.dismiss()
 
 
-
 class ListViewScreen(BaseScreen[ValueT]):
 	"""
 	List single selection menu
@@ -248,9 +247,9 @@ class ListViewScreen(BaseScreen[ValueT]):
 			list_view = ListView(id='list_widget')
 
 			list_view = ListView(
-				ListItem(Label("One")),
-				ListItem(Label("Two")),
-				ListItem(Label("Three")),
+				ListItem(Label('One')),
+				ListItem(Label('Two')),
+				ListItem(Label('Three')),
 			)
 
 			if not self._show_frame:
@@ -295,20 +294,20 @@ class ListViewScreen(BaseScreen[ValueT]):
 			self._set_preview(focus_item.get_id())
 
 	# def on_option_list_option_selected(self, event: ListView.Highlighted) -> None:
-	#	item = event.item
-	#	if not item:
-	#		return
+	# item = event.item
+	# if not item:
+	# return
 	#
-	#	if item.id is not None:
-	#		item = self._group.find_by_id(item.id)
-	#		_ = self.dismiss(Result(ResultType.Selection, _item=item))
+	# if item.id is not None:
+	# item = self._group.find_by_id(item.id)
+	# _ = self.dismiss(Result(ResultType.Selection, _item=item))
 	#
 	# def on_option_list_option_highlighted(self, event: ListView.Highlighted) -> None:
-	#	item = event.item
-	#	if not item:
-	#		return
+	# item = event.item
+	# if not item:
+	# return
 	#
-	#	self._set_preview(item.id)
+	# self._set_preview(item.id)
 
 	def _set_preview(self, item_id: str) -> None:
 		if self._preview_location is None:
@@ -508,23 +507,15 @@ class OptionListScreen(BaseScreen[ValueT]):
 
 		option_list = event.option_list
 
-		# y_coord = (
-		#	option_list.screen_offset.y +
-		#	event.option_index -
-		#	option_list.scroll_offset.y
-		# )
-
-		# self.app.cursor_position = Offset(option_list.screen_offset.x, y_coord)
+		# set the hardware cursor on the highlighted line (for screen readers)
+		target_y = option_list.region.y + event.option_index - option_list.scroll_offset.y
 
 		debug(f'Index: {event.option_index}')
 		debug(f'Region: {option_list.region}')
 		debug(f'Scroll offset: {option_list.scroll_offset}')
+		debug(f'Target Y: {target_y}')
 
-		target_y = option_list.region.y + event.option_index - int(option_list.scroll_offset.y)
-
-		# Move the hardware cursor to the start of the highlighted line
 		self.app.cursor_position = Offset(option_list.region.x, target_y)
-
 
 	def _set_preview(self, item_id: str) -> None:
 		if self._preview_location is None:
@@ -1165,7 +1156,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 				else:
 					row_values.insert(0, '[ ]')
 
-			row_key = table.add_row(*row_values, key=item)	# type: ignore[arg-type]
+			row_key = table.add_row(*row_values, key=item)  # type: ignore[arg-type]
 			if item in selected:
 				self._selected_keys.add(row_key)
 
@@ -1224,7 +1215,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 			_ = self.dismiss(
 				Result[ValueT](
 					ResultType.Selection,
-					_item=event.row_key.value,	# type: ignore[arg-type]
+					_item=event.row_key.value,  # type: ignore[arg-type]
 				)
 			)
 
@@ -1349,7 +1340,7 @@ class _AppInstance(App[ValueT]):
 		except Exception as err:
 			debug(f'Error while running main app: {err}')
 			# this will terminate the textual app and return the exception
-			self.exit(err)	# type: ignore[arg-type]
+			self.exit(err)  # type: ignore[arg-type]
 
 	@work
 	async def _show_async(self, screen: Screen[Result[ValueT]]) -> Result[ValueT]:
