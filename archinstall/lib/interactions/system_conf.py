@@ -110,20 +110,11 @@ def select_driver(options: list[GfxDriver] = [], preset: GfxDriver | None = None
 def ask_for_swap(preset: bool = True) -> bool:
 	prompt = tr('Would you like to use swap on zram?')
 
-	result = Selection[GfxDriver](
-		MenuItemGroup.yes_no(),
+	result = Confirmation(
 		header=prompt,
 		allow_skip=True,
-		allow_reset=True,
-		preview_location='right',
-		test=True
+		preset=preset,
 	).show()
-
-	# result = Confirmation(
-	#	header=prompt,
-	#	allow_skip=True,
-	#	preset=preset,
-	# ).show()
 
 	match result.type_:
 		case ResultType.Skip:
