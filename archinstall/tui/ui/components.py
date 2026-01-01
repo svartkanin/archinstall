@@ -9,6 +9,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Center, Horizontal, ScrollableContainer, Vertical
 from textual.events import Key
+from textual.geometry import Offset
 from textual.screen import Screen
 from textual.validation import Validator
 from textual.widgets import Button, DataTable, Footer, Input, Label, ListItem, ListView, LoadingIndicator, OptionList, Rule, SelectionList
@@ -504,6 +505,22 @@ class OptionListScreen(BaseScreen[ValueT]):
 	def on_option_list_option_highlighted(self, event: OptionList.OptionHighlighted) -> None:
 		if event.option.id:
 			self._set_preview(event.option.id)
+
+		option_list = event.option_list
+
+		# y_coord = (
+		#	option_list.screen_offset.y +
+		#	event.option_index -
+		#	option_list.scroll_offset.y
+		# )
+		#
+		# self.app.cursor_position = Offset(option_list.screen_offset.x, y_coord)
+
+		target_y = option_list.region.y + event.option_index - int(option_list.scroll_offset.y)
+
+		# Move the hardware cursor to the start of the highlighted line
+		self.app.cursor_position = Offset(option_list.region.x, target_y)
+
 
 	def _set_preview(self, item_id: str) -> None:
 		if self._preview_location is None:
