@@ -30,7 +30,7 @@ class FruitApp(App):
 		if index is None:
 			return
 
-		target_y = option_list.region.y + index - option_list.scroll_offset.y
+		target_y = option_list.region.y + index+1 - option_list.scroll_offset.y
 		self.app.cursor_position = Offset(option_list.region.x, target_y)
 
 		out(f'INDEX: {index}')
