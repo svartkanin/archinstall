@@ -9,6 +9,7 @@ def out(text):
 
 class FruitApp(App):
 	def compose(self) -> ComposeResult:
+		self.app.console.show_cursor(True)
 		yield OptionList('apple', 'banana', 'pear')
 
 	def on_mount(self) -> None:

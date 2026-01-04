@@ -309,7 +309,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 			return
 
 		# set the hardware cursor on the highlighted line (for screen readers)
-		target_y = option_list.region.y + (index + 1)- option_list.scroll_offset.y
+		target_y = option_list.region.y + index - option_list.scroll_offset.y
 
 		debug(f'Index: {index}')
 		debug(f'Region: {option_list.region}')
