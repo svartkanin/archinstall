@@ -2,6 +2,10 @@ from textual.app import App, ComposeResult
 from textual.geometry import Offset
 from textual.widgets import OptionList
 
+def out(text):
+	with open('out.txt', 'a') as f:
+		f.write(text + '\n')
+
 
 class FruitApp(App):
 	def compose(self) -> ComposeResult:
@@ -19,6 +23,9 @@ class FruitApp(App):
 
 		target_y = option_list.region.y + index - option_list.scroll_offset.y
 		self.app.cursor_position = Offset(option_list.region.x, target_y)
+
+		out(f'INDEX: {index}')
+		out(f'TARGET: {target_y}')
 
 
 if __name__ == '__main__':
