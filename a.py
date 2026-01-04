@@ -11,14 +11,23 @@ class FruitApp(App):
 	def compose(self) -> ComposeResult:
 		yield OptionList('apple', 'banana', 'pear')
 
+	def on_mount(self) -> None:
+		self.query_one(OptionList).highlighted = 2
+		self._set_cursor()
+
 	def on_option_list_selected(self) -> None:
 		self.exit()
 
 	def on_option_list_option_highlighted(self, event: OptionList.OptionHighlighted) -> None:
+		self._set_cursor()
+
+	def _set_cursor(self):
 		option_list = self.query_one(OptionList)
 		index = option_list.highlighted
 
-		if not index:
+		out(f'HIGHTLIGHT: {index}')
+
+		if index is None:
 			return
 
 		target_y = option_list.region.y + index - option_list.scroll_offset.y
