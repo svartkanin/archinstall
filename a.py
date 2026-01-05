@@ -24,10 +24,6 @@ class FruitScreen(Screen):
         background: transparent;
     }
 
-    .no-border {
-        border: none;
-    }
-
     .list-container {
         width: auto;
         height: auto;
@@ -86,7 +82,7 @@ class FruitScreen(Screen):
         if index is None:
             return
 
-        target_y = option_list.region.y + index + 1 - option_list.scroll_offset.y
+        target_y = option_list.region.y + index - option_list.scroll_offset.y
         self.app.cursor_position = Offset(option_list.region.x, target_y)
 
         out(f'INDEX: {index}')
@@ -94,6 +90,94 @@ class FruitScreen(Screen):
 
 
 class FruitApp(App):
+    CSS = """
+    Screen {
+        color: white;
+    }
+
+    * {
+        scrollbar-size: 1 1;
+
+        /* Use high contrast colors */
+        scrollbar-color: white;
+        scrollbar-background: black;
+    }
+
+    .app-header {
+        dock: top;
+        height: auto;
+        width: 100%;
+        content-align: center middle;
+        background: blue;
+        color: white;
+        text-style: bold;
+    }
+
+    .header-text {
+        text-align: center;
+        width: 100%;
+        height: auto;
+
+        padding-top: 2;
+        padding-bottom: 2;
+
+        background: transparent;
+    }
+
+    .preview-header {
+        text-align: center;
+        color: white;
+        text-style: bold;
+        width: 100%;
+
+        padding-bottom: 1;
+
+        background: transparent;
+    }
+
+    .no-border {
+        border: none;
+    }
+
+    Input {
+        border: solid gray 50%;
+        background: transparent;
+        height: 3;
+        color: white;
+    }
+
+    Input .input--cursor {
+        color: white;
+    }
+
+    Input:focus {
+        border: solid blue;
+    }
+
+    Footer {
+        dock: bottom;
+        width: 100%;
+        background: transparent;
+        color: white;
+        height: 1;
+    }
+
+    .footer-key--key {
+        background: black;
+        color: white;
+    }
+
+    .footer-key--description {
+        background: black;
+        color: white;
+    }
+
+    FooterKey.-command-palette {
+        background: black;
+        border-left: vkey ansi_black;
+    }
+    """
+
     def on_mount(self) -> None:
         self.push_screen(FruitScreen())
 
