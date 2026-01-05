@@ -247,9 +247,9 @@ class OptionListScreen(BaseScreen[ValueT]):
 				option_list.classes = 'no-border'
 
 			if self._preview_location is None:
-				with Center():
-					with Vertical(classes='list-container'):
-						yield option_list
+				# with Center():
+				#	with Vertical(classes='list-container'):
+				yield option_list
 			else:
 				Container = Horizontal if self._preview_location == 'right' else Vertical
 				rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
