@@ -136,7 +136,8 @@ class OptionListScreen(BaseScreen[ValueT]):
 		background: transparent;
 	}
 
-	.content-container {
+	.header-container {
+		align: left top;
 		width: 1fr;
 		height: 1fr;
 
@@ -144,7 +145,19 @@ class OptionListScreen(BaseScreen[ValueT]):
 		padding-bottom: 3;
 		padding-left: 2;
 
-		background: transparent;
+		background: blue;
+	}
+
+	.olist-container {
+		align: left top;
+		width: 1fr;
+		height: 1fr;
+
+		padding-top: 0;
+		padding-bottom: 3;
+		padding-left: 2;
+
+		background: red;
 	}
 
 	.list-container {
@@ -161,7 +174,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 		min-width: 15%;
 		max-height: 1fr;
 
-		background: transparent;
+		background: yellow;
 	}
 
 	OptionList > .option-list--option-highlighted {
@@ -236,30 +249,30 @@ class OptionListScreen(BaseScreen[ValueT]):
 	def compose(self) -> ComposeResult:
 		# yield from self._compose_header()
 
-		if self._header:
-			with Vertical(classes='content-container'):
+		with Vertical(classes='header-container'):
+			if self._header:
 				yield Label(self._header, classes='header-text', id='header_text')
 
-		option_list = OptionList(id='option_list_widget')
+			option_list = OptionList(id='option_list_widget')
 
-		if not self._show_frame:
-			option_list.classes = 'no-border'
+			if not self._show_frame:
+				option_list.classes = 'no-border'
 
-		if self._preview_location is None:
-			# with Center():
-			with Vertical(classes='content-container'):
-				yield option_list
-		else:
-			Container = Horizontal if self._preview_location == 'right' else Vertical
-			rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
+			if self._preview_location is None:
+				with Center():
+					with Vertical(classes='olist-container'):
+						yield option_list
+			else:
+				Container = Horizontal if self._preview_location == 'right' else Vertical
+				rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
 
-			with Container(classes='list-container'):
-				yield option_list
-				# yield Rule(orientation=rule_orientation)
-				# yield ScrollableContainer(Label('', id='preview_content', markup=False))
+				with Container(classes='list-container'):
+					yield option_list
+					# yield Rule(orientation=rule_orientation)
+					# yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
-		# if self._filter:
-		#	yield Input(placeholder='/filter', id='filter-input')
+			# if self._filter:
+			#	yield Input(placeholder='/filter', id='filter-input')
 
 		# yield Footer()
 
