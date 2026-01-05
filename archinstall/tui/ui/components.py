@@ -245,20 +245,19 @@ class OptionListScreen(BaseScreen[ValueT]):
 
 			if not self._show_frame:
 				option_list.classes = 'no-border'
-			yield option_list
 
-			# if self._preview_location is None:
-			#	with Center():
-			#		with Vertical(classes='list-container'):
-			#			yield option_list
-			# else:
-			#	Container = Horizontal if self._preview_location == 'right' else Vertical
-			#	# rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
-			#
-			#	with Container():
-			#		yield option_list
-			#		# yield Rule(orientation=rule_orientation)
-			#		# yield ScrollableContainer(Label('', id='preview_content', markup=False))
+			if self._preview_location is None:
+				with Center():
+					with Vertical(classes='list-container'):
+						yield option_list
+			else:
+				Container = Horizontal if self._preview_location == 'right' else Vertical
+				rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
+
+				with Container():
+					yield option_list
+					yield Rule(orientation=rule_orientation)
+					yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
 		# if self._filter:
 		#	yield Input(placeholder='/filter', id='filter-input')
