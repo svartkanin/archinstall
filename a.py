@@ -24,6 +24,10 @@ class FruitScreen(Screen):
         background: transparent;
     }
 
+    .no-border {
+        border: none;
+    }
+
     .list-container {
         width: auto;
         height: auto;
@@ -52,7 +56,11 @@ class FruitScreen(Screen):
         self.app.console.show_cursor(True)
 
         with Vertical(classes='content-container'):
-            yield OptionList(id='option_list_widget')
+            option_list = OptionList(id='option_list_widget')
+
+            option_list.classes = 'no-border'
+
+            yield option_list
 
     def on_mount(self) -> None:
         self._update_options()
