@@ -242,11 +242,12 @@ class OptionListScreen(BaseScreen[ValueT]):
 				yield Label(self._header, classes='header-text', id='header_text')
 
 			option_list = OptionList(id='option_list_widget')
+
+			if not self._show_frame:
+				option_list.classes = 'no-border'
+
 			yield option_list
 
-			# if not self._show_frame:
-			#	option_list.classes = 'no-border'
-			#
 			# if self._preview_location is None:
 			#	with Center():
 			#		with Vertical(classes='list-container'):
@@ -307,7 +308,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 			return
 
 		target_y = sum([
-			1 if self._show_frame else 1,  # add top buffer for the frame
+			1 if self._show_frame else 0,  # add top buffer for the frame
 			option_list.region.y,  # padding/margin offset of the option list
 			index,	# index of the highlighted option
 			-option_list.scroll_offset.y,  # scroll offset
