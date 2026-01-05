@@ -10,10 +10,15 @@ def out(text):
 class FruitApp(App):
 	def compose(self) -> ComposeResult:
 		self.app.console.show_cursor(True)
-		yield OptionList('apple', 'banana', 'pear')
+		yield OptionList()
 
 	def on_mount(self) -> None:
-		self.query_one(OptionList).highlighted = 2
+		self._update_options()
+
+	def _update_options(self) -> None:
+		option_list = self.query_one(OptionList)
+		option_list.clear_options()
+		option_list.add_options(['apple', 'banana', 'pear', 'cucumber', 'pineapple', 'broccoli', 'strawberry'])
 		self._set_cursor()
 
 	def on_option_list_selected(self) -> None:
