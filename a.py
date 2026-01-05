@@ -8,6 +8,44 @@ def out(text):
 
 
 class FruitApp(App):
+	CSS = """
+	.content-container {
+		width: 1fr;
+		height: 1fr;
+		max-height: 100%;
+
+		padding-top: 0;
+		padding-bottom: 3;
+		padding-left: 2;
+
+		background: transparent;
+	}
+
+	.list-container {
+		width: auto;
+		height: auto;
+		max-height: 100%;
+
+		background: transparent;
+	}
+
+	OptionList {
+		width: auto;
+		height: auto;
+		min-width: 15%;
+		max-height: 1fr;
+
+		background: transparent;
+	}
+
+	OptionList > .option-list--option-highlighted {
+		background: blue;
+		color: white;
+		text-style: bold;
+	}
+	"""
+
+
 	def compose(self) -> ComposeResult:
 		self.app.console.show_cursor(True)
 		yield OptionList()
