@@ -1,4 +1,5 @@
 from textual.app import App, ComposeResult
+from textual.containers import Vertical
 from textual.geometry import Offset
 from textual.widgets import OptionList
 from textual.screen import Screen
@@ -47,9 +48,11 @@ class FruitScreen(Screen):
     }
     """
 
-    def compose(self) -> ComposeResult:
+    def compose(self) -> None:
         self.app.console.show_cursor(True)
-        yield OptionList()
+
+        with Vertical(classes='content-container'):
+            yield OptionList(id='option_list_widget')
 
     def on_mount(self) -> None:
         self._update_options()
