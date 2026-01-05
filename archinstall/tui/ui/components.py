@@ -139,7 +139,6 @@ class OptionListScreen(BaseScreen[ValueT]):
 	.content-container {
 		width: 1fr;
 		height: 1fr;
-		max-height: 100%;
 
 		padding-top: 0;
 		padding-bottom: 3;
@@ -237,27 +236,27 @@ class OptionListScreen(BaseScreen[ValueT]):
 	def compose(self) -> ComposeResult:
 		# yield from self._compose_header()
 
-		with Vertical(classes='content-container'):
-			if self._header:
+		if self._header:
+			with Vertical(classes='content-container'):
 				yield Label(self._header, classes='header-text', id='header_text')
 
-			option_list = OptionList(id='option_list_widget')
+		option_list = OptionList(id='option_list_widget')
 
-			if not self._show_frame:
-				option_list.classes = 'no-border'
+		if not self._show_frame:
+			option_list.classes = 'no-border'
 
-			if self._preview_location is None:
-				# with Center():
-				with Vertical(classes='content-container'):
-					yield option_list
-			else:
-				Container = Horizontal if self._preview_location == 'right' else Vertical
-				rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
+		if self._preview_location is None:
+			# with Center():
+			with Vertical(classes='content-container'):
+				yield option_list
+		else:
+			Container = Horizontal if self._preview_location == 'right' else Vertical
+			rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
 
-				with Container(classes='list-container'):
-					yield option_list
-					# yield Rule(orientation=rule_orientation)
-					# yield ScrollableContainer(Label('', id='preview_content', markup=False))
+			with Container(classes='list-container'):
+				yield option_list
+				# yield Rule(orientation=rule_orientation)
+				# yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
 		# if self._filter:
 		#	yield Input(placeholder='/filter', id='filter-input')
