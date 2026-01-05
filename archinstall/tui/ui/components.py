@@ -254,8 +254,8 @@ class OptionListScreen(BaseScreen[ValueT]):
 				Container = Horizontal if self._preview_location == 'right' else Vertical
 				rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
 
-				# with Container():
-				yield option_list
+				with Container(classes='list-container'):
+					yield option_list
 					# yield Rule(orientation=rule_orientation)
 					# yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
