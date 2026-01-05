@@ -65,9 +65,9 @@ class FruitScreen(Screen):
 		with Vertical(classes='content-container'):
 			yield Label('Header', classes='header-text', id='header_text')
 
-			with Center():
-				with Vertical(classes='list-container'):
-					yield OptionList(id='option_list_widget')
+			# with Center():
+			#	with Vertical(classes='list-container'):
+			yield OptionList(id='option_list_widget')
 
 	def on_mount(self) -> None:
 		self._update_options()
