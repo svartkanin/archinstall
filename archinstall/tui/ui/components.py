@@ -242,22 +242,23 @@ class OptionListScreen(BaseScreen[ValueT]):
 				yield Label(self._header, classes='header-text', id='header_text')
 
 			option_list = OptionList(id='option_list_widget')
+			yield option_list
 
-			if not self._show_frame:
-				option_list.classes = 'no-border'
-
-			if self._preview_location is None:
-				with Center():
-					with Vertical(classes='list-container'):
-						yield option_list
-			else:
-				Container = Horizontal if self._preview_location == 'right' else Vertical
-				# rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
-
-				with Container():
-					yield option_list
-					# yield Rule(orientation=rule_orientation)
-					# yield ScrollableContainer(Label('', id='preview_content', markup=False))
+			# if not self._show_frame:
+			#	option_list.classes = 'no-border'
+			#
+			# if self._preview_location is None:
+			#	with Center():
+			#		with Vertical(classes='list-container'):
+			#			yield option_list
+			# else:
+			#	Container = Horizontal if self._preview_location == 'right' else Vertical
+			#	# rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
+			#
+			#	with Container():
+			#		yield option_list
+			#		# yield Rule(orientation=rule_orientation)
+			#		# yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
 		# if self._filter:
 		#	yield Input(placeholder='/filter', id='filter-input')
@@ -305,8 +306,12 @@ class OptionListScreen(BaseScreen[ValueT]):
 		if index is None:
 			return
 
-		# set the hardware cursor on the highlighted line (for screen readers)
-		target_y = option_list.region.y + index - option_list.scroll_offset.y
+		target_y = sum([
+			1 if self._show_frame else 1,  # add top buffer for the frame
+			option_list.region.y,  # padding/margin offset of the option list
+			index,	# index of the highlighted option
+			-option_list.scroll_offset.y,  # scroll offset
+		])
 
 		debug(f'Index: {index}')
 		debug(f'Region: {option_list.region}')
