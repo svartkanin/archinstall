@@ -259,10 +259,10 @@ class OptionListScreen(BaseScreen[ValueT]):
 					# yield Rule(orientation=rule_orientation)
 					# yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
-		if self._filter:
-			yield Input(placeholder='/filter', id='filter-input')
+		# if self._filter:
+		#	yield Input(placeholder='/filter', id='filter-input')
 
-		yield Footer()
+		# yield Footer()
 
 	def on_mount(self) -> None:
 		self._update_options(self._options)
