@@ -141,8 +141,9 @@ class OptionListScreen(BaseScreen[ValueT]):
 		height: 1fr;
 		max-height: 100%;
 
-		margin-top: 2;
-		margin-left: 2;
+		padding-top: 0;
+		padding-bottom: 3;
+		padding-left: 2;
 
 		background: transparent;
 	}
@@ -162,8 +163,6 @@ class OptionListScreen(BaseScreen[ValueT]):
 		height: auto;
 		min-width: 15%;
 		max-height: 1fr;
-
-		padding-bottom: 3;
 
 		background: transparent;
 	}
