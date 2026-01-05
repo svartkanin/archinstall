@@ -153,8 +153,6 @@ class OptionListScreen(BaseScreen[ValueT]):
 		height: auto;
 		max-height: 100%;
 
-		padding-bottom: 3;
-
 		background: transparent;
 	}
 
@@ -254,12 +252,12 @@ class OptionListScreen(BaseScreen[ValueT]):
 						yield option_list
 			else:
 				Container = Horizontal if self._preview_location == 'right' else Vertical
-				rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
+				# rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
 
 				with Container():
 					yield option_list
-					yield Rule(orientation=rule_orientation)
-					yield ScrollableContainer(Label('', id='preview_content', markup=False))
+					# yield Rule(orientation=rule_orientation)
+					# yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
 		if self._filter:
 			yield Input(placeholder='/filter', id='filter-input')
