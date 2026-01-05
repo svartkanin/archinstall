@@ -49,8 +49,6 @@ class FruitScreen(Screen):
     """
 
     def compose(self) -> None:
-        self.app.console.show_cursor(True)
-
         with Vertical(classes='content-container'):
             option_list = OptionList(id='option_list_widget')
 
