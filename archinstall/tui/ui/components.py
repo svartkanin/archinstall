@@ -257,7 +257,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 				with Container():
 					yield option_list
 					yield Rule(orientation=rule_orientation)
-					yield ScrollableContainer(Label('', id='preview_content', markup=False))
+					# yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
 		# if self._filter:
 		#	yield Input(placeholder='/filter', id='filter-input')
