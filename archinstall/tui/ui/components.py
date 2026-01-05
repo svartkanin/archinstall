@@ -141,7 +141,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 		height: 1fr;
 		max-height: 100%;
 
-		padding-top: 2;
+		padding-top: 0;
 		padding-bottom: 3;
 		padding-left: 2;
 
@@ -245,22 +245,23 @@ class OptionListScreen(BaseScreen[ValueT]):
 
 			if not self._show_frame:
 				option_list.classes = 'no-border'
+			yield option_list
 
-			if self._preview_location is None:
-				with Center():
-					with Vertical(classes='list-container'):
-						yield option_list
-			else:
-				Container = Horizontal if self._preview_location == 'right' else Vertical
-				rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
+			# if self._preview_location is None:
+			#	with Center():
+			#		with Vertical(classes='list-container'):
+			#			yield option_list
+			# else:
+			#	Container = Horizontal if self._preview_location == 'right' else Vertical
+			#	# rule_orientation: Literal['horizontal', 'vertical'] = 'vertical' if self._preview_location == 'right' else 'horizontal'
+			#
+			#	with Container():
+			#		yield option_list
+			#		# yield Rule(orientation=rule_orientation)
+			#		# yield ScrollableContainer(Label('', id='preview_content', markup=False))
 
-				with Container():
-					yield option_list
-					yield Rule(orientation=rule_orientation)
-					yield ScrollableContainer(Label('', id='preview_content', markup=False))
-
-		if self._filter:
-			yield Input(placeholder='/filter', id='filter-input')
+		# if self._filter:
+		#	yield Input(placeholder='/filter', id='filter-input')
 
 		# yield Footer()
 
@@ -320,20 +321,21 @@ class OptionListScreen(BaseScreen[ValueT]):
 		self.app.cursor_position = Offset(option_list.region.x, target_y)
 
 	def _set_preview(self, item_id: str) -> None:
-		if self._preview_location is None:
-			return None
-
-		preview_widget = self.query_one('#preview_content', Label)
-		item = self._group.find_by_id(item_id)
-
-		if item.preview_action is not None:
-			maybe_preview = item.preview_action(item)
-
-			if maybe_preview is not None:
-				preview_widget.update(maybe_preview)
-				return
-
-		preview_widget.update('')
+		pass
+		# if self._preview_location is None:
+		#	return None
+		#
+		# preview_widget = self.query_one('#preview_content', Label)
+		# item = self._group.find_by_id(item_id)
+		#
+		# if item.preview_action is not None:
+		#	maybe_preview = item.preview_action(item)
+		#
+		#	if maybe_preview is not None:
+		#		preview_widget.update(maybe_preview)
+		#		return
+		#
+		# preview_widget.update('')
 
 
 class SelectListScreen(BaseScreen[ValueT]):
