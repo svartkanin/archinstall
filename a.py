@@ -93,7 +93,7 @@ class FruitScreen(Screen):
 		if index is None:
 			return
 
-		screen_origin = option_list.content_offset
+		screen_origin = option_list.offset
 		line_y = index - option_list.scroll_offset.y
 		self.app.cursor_position = Offset(screen_origin.x, screen_origin.y + line_y)
 
