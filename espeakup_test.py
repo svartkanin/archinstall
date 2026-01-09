@@ -60,9 +60,18 @@ class FruitScreen(Screen):
 	}
 	"""
 
+	# def compose(self) -> None:
+	#	with Vertical(classes='content-container'):
+	#		yield Label('Header', classes='header-text', id='header_text')
+	#
+	#		with Center():
+	#			with Vertical(classes='list-container'):
+	#				yield OptionList(id='option_list_widget')
+
 	def compose(self) -> None:
 		with Vertical(classes='content-container'):
 			yield Label('Header', classes='header-text', id='header_text')
+			yield Label('Sub Header', classes='header-text', id='sub_header_text')
 
 			with Center():
 				with Vertical(classes='list-container'):
