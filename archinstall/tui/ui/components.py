@@ -524,12 +524,13 @@ class SelectListScreen(BaseScreen[ValueT]):
 		if focus_item := self._group.focus_item:
 			self._set_preview(focus_item)
 
-	def on_selection_list_selection_highlighted(self, event: SelectionList.SelectionHighlighted[MenuItem]) -> None:
-		if self._preview_location is None:
-			return None
+		self._set_cursor()
 
-		item: MenuItem = event.selection.value
-		self._set_preview(item)
+	def on_selection_list_selection_highlighted(self, event: SelectionList.SelectionHighlighted[MenuItem]) -> None:
+		if self._preview_location is not None:
+			item: MenuItem = event.selection.value
+			self._set_preview(item)
+
 		self._set_cursor()
 
 	def _set_cursor(self) -> None:
@@ -547,11 +548,6 @@ class SelectListScreen(BaseScreen[ValueT]):
 				-selection_list.scroll_offset.y,  # scroll offset
 			]
 		)
-
-		# debug(f'Index: {index}')
-		# debug(f'Region: {option_list.region}')
-		# debug(f'Scroll offset: {option_list.scroll_offset}')
-		# debug(f'Target_Y: {target_y}')
 
 		self.app.cursor_position = Offset(selection_list.region.x, target_y)
 		self.app.refresh()
