@@ -560,6 +560,8 @@ class SelectListScreen(BaseScreen[ValueT]):
 		else:
 			self._selected_items.remove(item)
 
+		self._set_cursor()
+
 	def _set_preview(self, item: MenuItem) -> None:
 		if self._preview_location is None:
 			return
