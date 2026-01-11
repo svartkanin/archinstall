@@ -104,13 +104,22 @@ class Confirmation:
 		return result
 
 	async def _run(self) -> None:
-		result = await ConfirmationScreen[bool](
-			group=self._group,
+		# result = await ConfirmationScreen[bool](
+		#	group=self._group,
+		#	header=self._header,
+		#	allow_skip=self._allow_skip,
+		#	allow_reset=self._allow_reset,
+		#	preview_location=self._preview_location,
+		#	preview_header=self._preview_header,
+		# ).run()
+
+		result = await OptionListScreen[bool](
+			self._group,
 			header=self._header,
 			allow_skip=self._allow_skip,
 			allow_reset=self._allow_reset,
 			preview_location=self._preview_location,
-			preview_header=self._preview_header,
+			enable_filter=False,
 		).run()
 
 		if result.type_ == ResultType.Reset:
