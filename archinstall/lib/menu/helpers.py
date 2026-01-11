@@ -5,7 +5,6 @@ from textual.validation import ValidationResult, Validator
 
 from archinstall.lib.translationhandler import tr
 from archinstall.tui.ui.components import (
-	ConfirmationScreen,
 	InputScreen,
 	LoadingScreen,
 	NotifyScreen,
@@ -104,15 +103,6 @@ class Confirmation:
 		return result
 
 	async def _run(self) -> None:
-		# result = await ConfirmationScreen[bool](
-		#	group=self._group,
-		#	header=self._header,
-		#	allow_skip=self._allow_skip,
-		#	allow_reset=self._allow_reset,
-		#	preview_location=self._preview_location,
-		#	preview_header=self._preview_header,
-		# ).run()
-
 		result = await OptionListScreen[bool](
 			self._group,
 			header=self._header,
@@ -290,7 +280,7 @@ class Table[ValueT]:
 
 
 async def _confirm_reset() -> Result[bool]:
-	return await ConfirmationScreen[bool](
+	return await OptionListScreen[bool](
 		MenuItemGroup.yes_no(),
 		header=tr('Are you sure you want to reset this setting?'),
 		allow_skip=False,

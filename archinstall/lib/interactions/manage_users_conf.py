@@ -35,14 +35,14 @@ class UserList(ListManager[User]):
 
 	@override
 	def handle_action(self, action: str, entry: User | None, data: list[User]) -> list[User]:
-		if action == self._actions[0]:  # add
+		if action == self._actions[0]:	# add
 			new_user = self._add_user()
 			if new_user is not None:
 				# in case a user with the same username as an existing user
 				# was created we'll replace the existing one
 				data = [d for d in data if d.username != new_user.username]
 				data += [new_user]
-		elif action == self._actions[1] and entry:  # change password
+		elif action == self._actions[1] and entry:	# change password
 			header = f'{tr("User")}: {entry.username}\n'
 			header += tr('Enter new password')
 			new_password = get_password(header=header)
@@ -50,10 +50,10 @@ class UserList(ListManager[User]):
 			if new_password:
 				user = next(filter(lambda x: x == entry, data))
 				user.password = new_password
-		elif action == self._actions[2] and entry:  # promote/demote
+		elif action == self._actions[2] and entry:	# promote/demote
 			user = next(filter(lambda x: x == entry, data))
 			user.sudo = False if user.sudo else True
-		elif action == self._actions[3] and entry:  # delete
+		elif action == self._actions[3] and entry:	# delete
 			data = [d for d in data if d != entry]
 
 		return data
@@ -66,7 +66,7 @@ class UserList(ListManager[User]):
 
 	def _add_user(self) -> User | None:
 		editResult = Input(
-			tr('Enter username'),
+			tr('Enter a username'),
 			allow_skip=True,
 			validator_callback=self._check_for_correct_username,
 		).show()
@@ -83,7 +83,7 @@ class UserList(ListManager[User]):
 			return None
 
 		header = f'{tr("Username")}: {username}\n'
-		prompt = f'{header}\n' + tr('Enter password')
+		prompt = f'{header}\n' + tr('Enter a password')
 
 		password = get_password(header=prompt, allow_skip=True)
 

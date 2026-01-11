@@ -48,7 +48,7 @@ def ask_ntp(preset: bool = True) -> bool:
 
 def ask_hostname(preset: str | None = None) -> str | None:
 	result = Input(
-		header=tr('Hostname'),
+		header=tr('Enter a hostname'),
 		allow_skip=True,
 		default_value=preset,
 	).show()
