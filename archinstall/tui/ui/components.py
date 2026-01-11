@@ -108,6 +108,19 @@ class LoadingScreen(BaseScreen[None]):
 		else:
 			self.set_timer(self._timer, self.action_pop_screen)
 
+		self._set_cursor()
+
+	def _set_cursor(self) -> None:
+		label = self.query_one(Label)
+
+		# debug(f'Index: {index}')
+		# debug(f'Region: {option_list.region}')
+		# debug(f'Scroll offset: {option_list.scroll_offset}')
+		# debug(f'Target_Y: {target_y}')
+
+		self.app.cursor_position = Offset(label.region.x, label.region.y)
+		self.app.refresh()
+
 	@work(thread=True)
 	def _exec_callback(self) -> None:
 		assert self._data_callback
@@ -120,7 +133,7 @@ class LoadingScreen(BaseScreen[None]):
 
 class OptionListScreen(BaseScreen[ValueT]):
 	"""
-	List single selection menu
+	Single selection menu list
 	"""
 
 	BINDINGS: ClassVar = [
@@ -311,7 +324,6 @@ class OptionListScreen(BaseScreen[ValueT]):
 				1 if self._show_frame else 0,  # add top buffer for the frame
 				option_list.region.y,  # padding/margin offset of the option list
 				index,  # index of the highlighted option
-				1 if self._show_frame else 0,
 				-option_list.scroll_offset.y,  # scroll offset
 			]
 		)
