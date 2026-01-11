@@ -91,7 +91,7 @@ class LoadingScreen(BaseScreen[None]):
 
 	@override
 	def compose(self) -> ComposeResult:
-		yield from self._compose_header()
+		# yield from self._compose_header()
 
 		with Vertical(classes='content-container'):
 			if self._header:
@@ -112,11 +112,6 @@ class LoadingScreen(BaseScreen[None]):
 
 	def _set_cursor(self) -> None:
 		label = self.query_one(Label)
-
-		# debug(f'Index: {index}')
-		# debug(f'Region: {option_list.region}')
-		# debug(f'Scroll offset: {option_list.scroll_offset}')
-		# debug(f'Target_Y: {target_y}')
 
 		self.app.cursor_position = Offset(label.region.x, label.region.y)
 		self.app.refresh()
@@ -323,7 +318,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 			[
 				1 if self._show_frame else 0,  # add top buffer for the frame
 				option_list.region.y,  # padding/margin offset of the option list
-				index,  # index of the highlighted option
+				index,	# index of the highlighted option
 				-option_list.scroll_offset.y,  # scroll offset
 			]
 		)
@@ -975,7 +970,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 				else:
 					row_values.insert(0, '[ ]')
 
-			row_key = table.add_row(*row_values, key=item)  # type: ignore[arg-type]
+			row_key = table.add_row(*row_values, key=item)	# type: ignore[arg-type]
 			if item in selected:
 				self._selected_keys.add(row_key)
 
@@ -1034,7 +1029,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 			_ = self.dismiss(
 				Result[ValueT](
 					ResultType.Selection,
-					_item=event.row_key.value,  # type: ignore[arg-type]
+					_item=event.row_key.value,	# type: ignore[arg-type]
 				)
 			)
 
@@ -1159,7 +1154,7 @@ class _AppInstance(App[ValueT]):
 		except Exception as err:
 			debug(f'Error while running main app: {err}')
 			# this will terminate the textual app and return the exception
-			self.exit(err)  # type: ignore[arg-type]
+			self.exit(err)	# type: ignore[arg-type]
 
 	@work
 	async def _show_async(self, screen: Screen[Result[ValueT]]) -> Result[ValueT]:
