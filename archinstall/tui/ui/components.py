@@ -91,7 +91,7 @@ class LoadingScreen(BaseScreen[None]):
 
 	@override
 	def compose(self) -> ComposeResult:
-		# yield from self._compose_header()
+		yield from self._compose_header()
 
 		with Vertical(classes='content-container'):
 			if self._header:
@@ -112,7 +112,6 @@ class LoadingScreen(BaseScreen[None]):
 
 	def _set_cursor(self) -> None:
 		label = self.query_one(Label)
-
 		self.app.cursor_position = Offset(label.region.x, label.region.y)
 		self.app.refresh()
 
@@ -531,6 +530,31 @@ class SelectListScreen(BaseScreen[ValueT]):
 
 		item: MenuItem = event.selection.value
 		self._set_preview(item)
+		self._set_cursor()
+
+	def _set_cursor(self) -> None:
+		selection_list = self.query_one(SelectionList)
+		index = selection_list.highlighted
+
+		if index is None:
+			return
+
+		target_y = sum(
+			[
+				1 if self._show_frame else 0,  # add top buffer for the frame
+				selection_list.region.y,  # padding/margin offset of the option list
+				index,	# index of the highlighted option
+				-selection_list.scroll_offset.y,  # scroll offset
+			]
+		)
+
+		# debug(f'Index: {index}')
+		# debug(f'Region: {option_list.region}')
+		# debug(f'Scroll offset: {option_list.scroll_offset}')
+		# debug(f'Target_Y: {target_y}')
+
+		self.app.cursor_position = Offset(selection_list.region.x, target_y)
+		self.app.refresh()
 
 	def on_selection_list_selection_toggled(self, event: SelectionList.SelectionToggled[MenuItem]) -> None:
 		item: MenuItem = event.selection.value
