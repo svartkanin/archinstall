@@ -19,6 +19,7 @@ class AbstractMenu[ValueT]:
 		self,
 		item_group: MenuItemGroup,
 		config: Any,
+		title: str | None = None,
 		auto_cursor: bool = True,
 		allow_reset: bool = False,
 		reset_warning: str | None = None,
@@ -28,6 +29,7 @@ class AbstractMenu[ValueT]:
 		self.auto_cursor = auto_cursor
 		self._allow_reset = allow_reset
 		self._reset_warning = reset_warning
+		self._title = title
 
 		self.is_context_mgr = False
 
@@ -99,6 +101,7 @@ class AbstractMenu[ValueT]:
 
 		while True:
 			result = Selection[ValueT](
+				title=self._title,
 				group=self._menu_item_group,
 				allow_skip=False,
 				allow_reset=self._allow_reset,

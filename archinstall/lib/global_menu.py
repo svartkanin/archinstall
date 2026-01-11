@@ -39,7 +39,11 @@ from .translationhandler import Language, tr, translation_handler
 
 
 class GlobalMenu(AbstractMenu[None]):
-	def __init__(self, arch_config: ArchConfig) -> None:
+	def __init__(
+		self,
+		arch_config: ArchConfig,
+		title: str | None = None
+	) -> None:
 		self._arch_config = arch_config
 		menu_options = self._get_menu_options()
 
@@ -49,7 +53,7 @@ class GlobalMenu(AbstractMenu[None]):
 			checkmarks=True,
 		)
 
-		super().__init__(self._item_group, config=arch_config)
+		super().__init__(self._item_group, config=arch_config, title=title)
 
 	def _get_menu_options(self) -> list[MenuItem]:
 		menu_options = [

@@ -45,11 +45,6 @@ class BaseScreen(Screen[Result[ValueT]]):
 		if self._allow_reset:
 			_ = self.dismiss(Result(ResultType.Reset))
 
-	def _compose_header(self) -> ComposeResult:
-		"""Compose the app header if global header text is available"""
-		if tui.global_header:
-			yield Label(tui.global_header, classes='app-header')
-
 
 class LoadingScreen(BaseScreen[None]):
 	CSS = """
@@ -91,8 +86,6 @@ class LoadingScreen(BaseScreen[None]):
 
 	@override
 	def compose(self) -> ComposeResult:
-		yield from self._compose_header()
-
 		with Vertical(classes='content-container'):
 			if self._header:
 				with Center():
@@ -186,6 +179,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 		self,
 		group: MenuItemGroup,
 		header: str | None = None,
+		title: str | None = None,
 		allow_skip: bool = False,
 		allow_reset: bool = False,
 		preview_location: Literal['right', 'bottom'] | None = None,
@@ -194,6 +188,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 		super().__init__(allow_skip, allow_reset)
 		self._group = group
 		self._header = header
+		self._title = title
 		self._preview_location = preview_location
 		self._filter = enable_filter
 		self._show_frame = False
@@ -245,7 +240,8 @@ class OptionListScreen(BaseScreen[ValueT]):
 
 	@override
 	def compose(self) -> ComposeResult:
-		yield from self._compose_header()
+		if self._title:
+			yield Label(self._title, classes='app-header')
 
 		with Vertical(classes='content-container'):
 			if self._header:
@@ -470,8 +466,6 @@ class SelectListScreen(BaseScreen[ValueT]):
 
 	@override
 	def compose(self) -> ComposeResult:
-		yield from self._compose_header()
-
 		with Vertical(classes='content-container'):
 			if self._header:
 				yield Label(self._header, classes='header-text', id='header_text')
@@ -560,8 +554,6 @@ class SelectListScreen(BaseScreen[ValueT]):
 		else:
 			self._selected_items.remove(item)
 
-		self._set_cursor()
-
 	def _set_preview(self, item: MenuItem) -> None:
 		if self._preview_location is None:
 			return
@@ -641,8 +633,6 @@ class ConfirmationScreen(BaseScreen[ValueT]):
 
 	@override
 	def compose(self) -> ComposeResult:
-		yield from self._compose_header()
-
 		yield Label(self._header, classes='header-text', id='header_text')
 
 		if self._preview_location is None:
@@ -771,8 +761,6 @@ class InputScreen(BaseScreen[str]):
 
 	@override
 	def compose(self) -> ComposeResult:
-		yield from self._compose_header()
-
 		yield Label(self._header, classes='header-text', id='header_text')
 
 		with Center(classes='container-wrapper'):
@@ -908,8 +896,6 @@ class TableSelectionScreen(BaseScreen[ValueT]):
 
 	@override
 	def compose(self) -> ComposeResult:
-		yield from self._compose_header()
-
 		if self._header:
 			yield Label(self._header, classes='header-text', id='header_text')
 
@@ -1192,14 +1178,6 @@ class TApp:
 	def __init__(self) -> None:
 		self._main = None
 		self._global_header: str | None = None
-
-	@property
-	def global_header(self) -> str | None:
-		return self._global_header
-
-	@global_header.setter
-	def global_header(self, value: str | None) -> None:
-		self._global_header = value
 
 	def run(self, main: Any) -> Result[ValueT]:
 		TApp.app = _AppInstance(main)

@@ -25,6 +25,7 @@ class Selection[ValueT]:
 		self,
 		group: MenuItemGroup,
 		header: str | None = None,
+		title: str | None = None,
 		allow_skip: bool = True,
 		allow_reset: bool = False,
 		preview_location: Literal['right', 'bottom'] | None = None,
@@ -32,6 +33,7 @@ class Selection[ValueT]:
 		enable_filter: bool = False,
 	):
 		self._header = header
+		self._title = title
 		self._group: MenuItemGroup = group
 		self._allow_skip = allow_skip
 		self._allow_reset = allow_reset
@@ -57,6 +59,7 @@ class Selection[ValueT]:
 			result = await OptionListScreen[ValueT](
 				self._group,
 				header=self._header,
+				title=self._title,
 				allow_skip=self._allow_skip,
 				allow_reset=self._allow_reset,
 				preview_location=self._preview_location,

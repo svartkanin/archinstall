@@ -19,7 +19,9 @@ from archinstall.lib.models.device import (
 )
 from archinstall.lib.models.users import User
 from archinstall.lib.output import debug, error, info
+from archinstall.lib.packages.packages import check_version_upgrade
 from archinstall.lib.profile.profiles_handler import profile_handler
+from archinstall.lib.translationhandler import tr
 
 
 def ask_user_questions() -> None:
@@ -29,7 +31,14 @@ def ask_user_questions() -> None:
 	will we continue with the actual installation steps.
 	"""
 
-	global_menu = GlobalMenu(arch_config_handler.config)
+	upgrade = check_version_upgrade()
+	title_text = 'Archlinux'
+
+	if upgrade:
+		text = tr('New version available') + f': {upgrade}'
+		title_text += f' ({text})'
+
+	global_menu = GlobalMenu(arch_config_handler.config, title=title_text)
 
 	if not arch_config_handler.args.advanced:
 		global_menu.set_enabled('parallel_downloads', False)
