@@ -63,8 +63,8 @@ class ProfileMenu(AbstractSubMenu[ProfileConfiguration]):
 		]
 
 	@override
-	def run(self, additional_title: str | None = None) -> ProfileConfiguration | None:
-		return super().run(additional_title=additional_title)
+	def run(self) -> ProfileConfiguration | None:
+		return super().run()
 
 	def _select_profile(self, preset: Profile | None) -> Profile | None:
 		profile = select_profile(preset)
