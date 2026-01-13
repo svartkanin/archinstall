@@ -1025,7 +1025,7 @@ class TableSelectionScreen(BaseScreen[ValueT]):
         target_y = sum(
             [
                 data_table.region.y,  # padding/margin offset of the option list
-                row_index  # index of the highlighted row
+                row_index + 1,  # index of the highlighted row
                 -data_table.scroll_offset.y,  # scroll offset
             ]
         )
