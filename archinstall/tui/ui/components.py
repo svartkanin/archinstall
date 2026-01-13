@@ -30,7 +30,6 @@ class BaseScreen(Screen[Result[ValueT]]):
     BINDINGS: ClassVar = [
         Binding('escape', 'cancel_operation', 'Cancel', show=True),
         Binding('ctrl+c', 'reset_operation', 'Reset', show=True),
-        Binding("tab", "app.focus_next", "Focus next", show=True),
     ]
 
     def __init__(self, allow_skip: bool = False, allow_reset: bool = False):
@@ -1025,7 +1024,8 @@ class TableSelectionScreen(BaseScreen[ValueT]):
         target_y = sum(
             [
                 data_table.region.y,  # padding/margin offset of the option list
-                row_index + 1,  # index of the highlighted row
+                1, # table header
+                row_index,  # index of the highlighted row
                 -data_table.scroll_offset.y,  # scroll offset
             ]
         )
@@ -1142,11 +1142,12 @@ class _AppInstance(App[ValueT]):
     .footer-key--description {
         background: black;
         color: white;
+        padding-right: 2;
     }
 
     FooterKey.-command-palette {
         background: black;
-        border-left: vkey ansi_black;
+        border-left: vkey white 20%;
     }
     """
 
