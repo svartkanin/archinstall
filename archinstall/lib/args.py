@@ -1,13 +1,14 @@
 import argparse
 import json
 import os
+import sys
 import urllib.error
 import urllib.parse
 from argparse import ArgumentParser, Namespace
 from dataclasses import dataclass, field
 from importlib.metadata import version
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 from urllib.request import Request, urlopen
 
 from pydantic.dataclasses import dataclass as p_dataclass
@@ -131,8 +132,8 @@ class ArchConfig:
 		return config
 
 	@classmethod
-	def from_config(cls, args_config: dict[str, Any], args: Arguments) -> 'ArchConfig':
-		arch_config = ArchConfig()
+	def from_config(cls, args_config: dict[str, Any], args: Arguments) -> Self:
+		arch_config = cls()
 
 		arch_config.locale_config = LocaleConfiguration.parse_arg(args_config)
 
@@ -266,7 +267,7 @@ class ArchConfigHandler:
 			self._config.version = self._get_version()
 		except ValueError as err:
 			warn(str(err))
-			exit(1)
+			sys.exit(1)
 
 	@property
 	def config(self) -> ArchConfig:
@@ -492,7 +493,7 @@ class ArchConfigHandler:
 				except ValueError as err:
 					if 'Invalid password' in str(err):
 						error(tr('Incorrect credentials file decryption password'))
-						exit(1)
+						sys.exit(1)
 					else:
 						debug(f'Error decrypting credentials file: {err}')
 						raise err from err
@@ -537,12 +538,12 @@ class ArchConfigHandler:
 		else:
 			error('Not a valid url')
 
-		exit(1)
+		sys.exit(1)
 
 	def _read_file(self, path: Path) -> str:
 		if not path.exists():
 			error(f'Could not find file {path}')
-			exit(1)
+			sys.exit(1)
 
 		return path.read_text()
 

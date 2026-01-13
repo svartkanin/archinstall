@@ -364,11 +364,14 @@ class Installer:
 			target = self.target / part_mod.relative_mountpoint
 			device_handler.mount(part_mod.dev_path, target, options=part_mod.mount_options)
 		elif part_mod.fs_type == FilesystemType.Btrfs:
-			self._mount_btrfs_subvol(
-				part_mod.dev_path,
-				part_mod.btrfs_subvols,
-				part_mod.mount_options,
-			)
+			# Only mount BTRFS subvolumes that have mountpoints specified
+			subvols_with_mountpoints = [sv for sv in part_mod.btrfs_subvols if sv.mountpoint is not None]
+			if subvols_with_mountpoints:
+				self._mount_btrfs_subvol(
+					part_mod.dev_path,
+					part_mod.btrfs_subvols,
+					part_mod.mount_options,
+				)
 		elif part_mod.is_swap():
 			device_handler.swapon(part_mod.dev_path)
 
@@ -379,14 +382,20 @@ class Installer:
 				device_handler.mount(volume.dev_path, target, options=volume.mount_options)
 
 		if volume.fs_type == FilesystemType.Btrfs and volume.dev_path:
-			self._mount_btrfs_subvol(volume.dev_path, volume.btrfs_subvols, volume.mount_options)
+			# Only mount BTRFS subvolumes that have mountpoints specified
+			subvols_with_mountpoints = [sv for sv in volume.btrfs_subvols if sv.mountpoint is not None]
+			if subvols_with_mountpoints:
+				self._mount_btrfs_subvol(volume.dev_path, volume.btrfs_subvols, volume.mount_options)
 
 	def _mount_luks_partition(self, part_mod: PartitionModification, luks_handler: Luks2) -> None:
 		if not luks_handler.mapper_dev:
 			return None
 
 		if part_mod.fs_type == FilesystemType.Btrfs and part_mod.btrfs_subvols:
-			self._mount_btrfs_subvol(luks_handler.mapper_dev, part_mod.btrfs_subvols, part_mod.mount_options)
+			# Only mount BTRFS subvolumes that have mountpoints specified
+			subvols_with_mountpoints = [sv for sv in part_mod.btrfs_subvols if sv.mountpoint is not None]
+			if subvols_with_mountpoints:
+				self._mount_btrfs_subvol(luks_handler.mapper_dev, part_mod.btrfs_subvols, part_mod.mount_options)
 		elif part_mod.mountpoint:
 			target = self.target / part_mod.relative_mountpoint
 			device_handler.mount(luks_handler.mapper_dev, target, options=part_mod.mount_options)
@@ -398,7 +407,10 @@ class Installer:
 				device_handler.mount(luks_handler.mapper_dev, target, options=volume.mount_options)
 
 		if volume.fs_type == FilesystemType.Btrfs and luks_handler.mapper_dev:
-			self._mount_btrfs_subvol(luks_handler.mapper_dev, volume.btrfs_subvols, volume.mount_options)
+			# Only mount BTRFS subvolumes that have mountpoints specified
+			subvols_with_mountpoints = [sv for sv in volume.btrfs_subvols if sv.mountpoint is not None]
+			if subvols_with_mountpoints:
+				self._mount_btrfs_subvol(luks_handler.mapper_dev, volume.btrfs_subvols, volume.mount_options)
 
 	def _mount_btrfs_subvol(
 		self,
@@ -406,7 +418,9 @@ class Installer:
 		subvolumes: list[SubvolumeModification],
 		mount_options: list[str] = [],
 	) -> None:
-		for subvol in sorted(subvolumes, key=lambda x: x.relative_mountpoint):
+		# Filter out subvolumes without mountpoints to avoid errors when sorting
+		subvols_with_mountpoints = [sv for sv in subvolumes if sv.mountpoint is not None]
+		for subvol in sorted(subvols_with_mountpoints, key=lambda x: x.relative_mountpoint):
 			mountpoint = self.target / subvol.relative_mountpoint
 			options = mount_options + [f'subvol={subvol.name}']
 			device_handler.mount(dev_path, mountpoint, options=options)
@@ -1052,7 +1066,7 @@ class Installer:
 
 		debug(f'Configuring grub-btrfsd service for {snapshot_type} at {snapshot_path}')
 
-		# Works for either snapper or ts just adpating default paths above
+		# Works for either snapper or ts just adapting default paths above
 		# https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html#id-1.14.3
 		systemd_dir = self.target / 'etc/systemd/system/grub-btrfsd.service.d'
 		systemd_dir.mkdir(parents=True, exist_ok=True)
@@ -1257,7 +1271,7 @@ class Installer:
 
 		try:
 			# Force EFI variables since bootctl detects arch-chroot
-			# as a container environemnt since v257 and skips them silently.
+			# as a container environment since v257 and skips them silently.
 			# https://github.com/systemd/systemd/issues/36174
 			if systemd_version >= '258':
 				self.arch_chroot(f'bootctl --variables=yes {" ".join(bootctl_options)} install')
@@ -1311,6 +1325,7 @@ class Installer:
 		boot_partition: PartitionModification,
 		root: PartitionModification | LvmVolume,
 		efi_partition: PartitionModification | None,
+		uki_enabled: bool = False,
 		bootloader_removable: bool = False,
 	) -> None:
 		debug('Installing grub bootloader')
@@ -1534,7 +1549,7 @@ class Installer:
 					f'cmdline: {kernel_params}',
 				]
 				config_contents += f'\n/Arch Linux ({kernel})\n'
-				config_contents += '\n'.join([f'    {it}' for it in entry]) + '\n'
+				config_contents += '\n'.join(f'    {it}' for it in entry) + '\n'
 			else:
 				entry = [
 					'protocol: linux',
@@ -1543,7 +1558,7 @@ class Installer:
 					f'module_path: {path_root}:/initramfs-{kernel}.img',
 				]
 				config_contents += f'\n/Arch Linux ({kernel})\n'
-				config_contents += '\n'.join([f'    {it}' for it in entry]) + '\n'
+				config_contents += '\n'.join(f'    {it}' for it in entry) + '\n'
 
 		config_path.write_text(config_contents)
 
@@ -1655,29 +1670,28 @@ class Installer:
 		kernel_params = ' '.join(self._get_kernel_params(root))
 
 		for kernel in self.kernels:
-			for variant in ('', '-fallback'):
-				if uki_enabled:
-					entry = f'"Arch Linux ({kernel}{variant}) UKI" "{kernel_params}"'
-				else:
-					if boot_on_root:
-						# Kernels are in /boot subdirectory of root filesystem
-						if hasattr(root, 'btrfs_subvols') and root.btrfs_subvols:
-							# Root is btrfs with subvolume, find the root subvolume
-							root_subvol = next((sv for sv in root.btrfs_subvols if sv.is_root()), None)
-							if root_subvol:
-								subvol_name = root_subvol.name
-								initrd_path = f'initrd={subvol_name}\\boot\\initramfs-{kernel}{variant}.img'
-							else:
-								initrd_path = f'initrd=\\boot\\initramfs-{kernel}{variant}.img'
+			if uki_enabled:
+				entry = f'"Arch Linux ({kernel}) UKI" "{kernel_params}"'
+			else:
+				if boot_on_root:
+					# Kernels are in /boot subdirectory of root filesystem
+					if hasattr(root, 'btrfs_subvols') and root.btrfs_subvols:
+						# Root is btrfs with subvolume, find the root subvolume
+						root_subvol = next((sv for sv in root.btrfs_subvols if sv.is_root()), None)
+						if root_subvol:
+							subvol_name = root_subvol.name
+							initrd_path = f'initrd={subvol_name}\\boot\\initramfs-{kernel}.img'
 						else:
-							# Root without btrfs subvolume
-							initrd_path = f'initrd=\\boot\\initramfs-{kernel}{variant}.img'
+							initrd_path = f'initrd=\\boot\\initramfs-{kernel}.img'
 					else:
-						# Kernels are at root of their partition (ESP or separate boot partition)
-						initrd_path = f'initrd=\\initramfs-{kernel}{variant}.img'
-					entry = f'"Arch Linux ({kernel}{variant})" "{kernel_params} {initrd_path}"'
+						# Root without btrfs subvolume
+						initrd_path = f'initrd=\\boot\\initramfs-{kernel}.img'
+				else:
+					# Kernels are at root of their partition (ESP or separate boot partition)
+					initrd_path = f'initrd=\\initramfs-{kernel}.img'
+				entry = f'"Arch Linux ({kernel})" "{kernel_params} {initrd_path}"'
 
-				config_contents.append(entry)
+			config_contents.append(entry)
 
 		config_path.write_text('\n'.join(config_contents) + '\n')
 
@@ -1772,7 +1786,7 @@ class Installer:
 		for plugin in plugins.values():
 			if hasattr(plugin, 'on_add_bootloader'):
 				# Allow plugins to override the boot-loader handling.
-				# This allows for bot configuring and installing bootloaders.
+				# This allows for boot configuring and installing bootloaders.
 				if plugin.on_add_bootloader(self):
 					return
 
@@ -1809,7 +1823,7 @@ class Installer:
 			case Bootloader.Systemd:
 				self._add_systemd_bootloader(boot_partition, root, efi_partition, uki_enabled)
 			case Bootloader.Grub:
-				self._add_grub_bootloader(boot_partition, root, efi_partition, bootloader_removable)
+				self._add_grub_bootloader(boot_partition, root, efi_partition, uki_enabled, bootloader_removable)
 			case Bootloader.Efistub:
 				self._add_efistub_bootloader(boot_partition, root, uki_enabled)
 			case Bootloader.Limine:

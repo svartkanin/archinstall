@@ -1,11 +1,10 @@
-from __future__ import annotations
-
+import sys
 from typing import override
 
 from archinstall.lib.disk.disk_menu import DiskLayoutConfigurationMenu
 from archinstall.lib.models.application import ApplicationConfiguration, ZramConfiguration
 from archinstall.lib.models.authentication import AuthenticationConfiguration
-from archinstall.lib.models.device import DiskLayoutConfiguration, DiskLayoutType, EncryptionType, FilesystemType, PartitionModification
+from archinstall.lib.models.device import DiskLayoutConfiguration, DiskLayoutType, FilesystemType, PartitionModification
 from archinstall.lib.packages import list_available_packages
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup
 
@@ -176,7 +175,7 @@ class GlobalMenu(AbstractMenu[None]):
 			),
 			MenuItem(
 				text=tr('Abort'),
-				action=lambda x: exit(1),
+				action=lambda x: sys.exit(1),
 				key=f'{CONFIG_KEY}_abort',
 			),
 		]
@@ -341,6 +340,11 @@ class GlobalMenu(AbstractMenu[None]):
 				output += f'{tr("Power management")}: {power_management_config.power_management.value}'
 				output += '\n'
 
+			if app_config.firewall_config:
+				firewall_config = app_config.firewall_config
+				output += f'{tr("Firewall")}: {firewall_config.firewall.value}'
+				output += '\n'
+
 			return output
 
 		return None
@@ -370,7 +374,7 @@ class GlobalMenu(AbstractMenu[None]):
 				output += '{}: {}'.format(tr('LVM configuration type'), disk_layout_conf.lvm_config.config_type.display_msg()) + '\n'
 
 			if disk_layout_conf.disk_encryption:
-				output += tr('Disk encryption') + ': ' + EncryptionType.type_to_text(disk_layout_conf.disk_encryption.encryption_type) + '\n'
+				output += tr('Disk encryption') + ': ' + disk_layout_conf.disk_encryption.encryption_type.type_to_text() + '\n'
 
 			if disk_layout_conf.btrfs_options:
 				btrfs_options = disk_layout_conf.btrfs_options
@@ -579,7 +583,7 @@ class GlobalMenu(AbstractMenu[None]):
 		if mirror_config.optional_repositories:
 			title = tr('Optional repositories')
 			divider = '-' * len(title)
-			repos = ', '.join([r.value for r in mirror_config.optional_repositories])
+			repos = ', '.join(r.value for r in mirror_config.optional_repositories)
 			output += f'{title}\n{divider}\n{repos}\n\n'
 
 		if mirror_config.custom_repositories:

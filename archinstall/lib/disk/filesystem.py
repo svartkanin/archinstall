@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import math
 import time
 from pathlib import Path
@@ -328,7 +326,7 @@ class FilesystemHandler:
 
 	def _final_warning(self) -> bool:
 		# Issue a final warning before we continue with something un-revertable.
-		# We mention the drive one last time, and count from 5 to 0.
+		# We count down from 5 to 0.
 		out = tr('Starting device modifications in ')
 		Tui.print(out, row=0, endl='', clear_screen=True)
 
