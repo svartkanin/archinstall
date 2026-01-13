@@ -119,16 +119,21 @@ class LoadingScreen(BaseScreen[None]):
         _ = self.dismiss()
 
 
+class _OptionList(OptionList):
+    BINDINGS: ClassVar = [
+        Binding("down", "cursor_down", "Down", show=True),
+        Binding("up", "cursor_up", "Up", show=True),
+        Binding('j', 'cursor_down', 'Down', show=False),
+        Binding('k', 'cursor_up', 'Up', show=False),
+    ]
+
+
 class OptionListScreen(BaseScreen[ValueT]):
     """
     Single selection menu list
     """
 
     BINDINGS: ClassVar = [
-        Binding("down", "cursor_down", "Down", show=False),
-        Binding("up", "cursor_up", "Up", show=False),
-        Binding('j', 'cursor_down', 'Down', show=True),
-        Binding('k', 'cursor_up', 'Up', show=True),
         Binding('/', 'search', 'Search', show=True),
     ]
 
@@ -198,16 +203,6 @@ class OptionListScreen(BaseScreen[ValueT]):
 
         self._options = self._get_options()
 
-    def action_cursor_down(self) -> None:
-        option_list = self.query_one(OptionList)
-        if option_list.has_focus:
-            option_list.action_cursor_down()
-
-    def action_cursor_up(self) -> None:
-        option_list = self.query_one(OptionList)
-        if option_list.has_focus:
-            option_list.action_cursor_up()
-
     def action_search(self) -> None:
         if self.query_one(OptionList).has_focus:
             if self._filter:
@@ -250,7 +245,7 @@ class OptionListScreen(BaseScreen[ValueT]):
             if self._header:
                 yield Label(self._header, classes='header-text', id='header_text')
 
-            option_list = OptionList(id='option_list_widget')
+            option_list = _OptionList(id='option_list_widget')
 
             if not self._show_frame:
                 option_list.classes = 'no-border'
@@ -346,14 +341,21 @@ class OptionListScreen(BaseScreen[ValueT]):
         preview_widget.update('')
 
 
+class _SelectionList(SelectionList[ValueT]):
+    BINDINGS: ClassVar = [
+        Binding("down", "cursor_down", "Down", show=True),
+        Binding("up", "cursor_up", "Up", show=True),
+        Binding('j', 'cursor_down', 'Down', show=False),
+        Binding('k', 'cursor_up', 'Up', show=False),
+    ]
+
+
 class SelectListScreen(BaseScreen[ValueT]):
     """
     Multi selection menu
     """
 
     BINDINGS: ClassVar = [
-        Binding('j', 'cursor_down', 'Down', show=True),
-        Binding('k', 'cursor_up', 'Up', show=True),
         Binding('/', 'search', 'Search', show=True),
         Binding('enter', '', 'Confirm', show=True),
     ]
@@ -423,16 +425,6 @@ class SelectListScreen(BaseScreen[ValueT]):
         self._selected_items: list[MenuItem] = self._group.selected_items
         self._options: list[Selection[MenuItem]] = self._get_selections()
 
-    def action_cursor_down(self) -> None:
-        select_list = self.query_one(OptionList)
-        if select_list.has_focus:
-            select_list.action_cursor_down()
-
-    def action_cursor_up(self) -> None:
-        select_list = self.query_one(OptionList)
-        if select_list.has_focus:
-            select_list.action_cursor_up()
-
     def action_search(self) -> None:
         if self.query_one(OptionList).has_focus:
             if self._filter:
@@ -473,7 +465,7 @@ class SelectListScreen(BaseScreen[ValueT]):
             if self._header:
                 yield Label(self._header, classes='header-text', id='header_text')
 
-            selection_list = SelectionList[MenuItem](id='select_list_widget')
+            selection_list = _SelectionList[MenuItem](id='select_list_widget')
 
             if not self._show_frame:
                 selection_list.classes = 'no-border'
@@ -572,10 +564,11 @@ class SelectListScreen(BaseScreen[ValueT]):
         preview_widget.update('')
 
 
+# DEPRECATED: Removed when switching to async
 class ConfirmationScreen(BaseScreen[ValueT]):
     BINDINGS: ClassVar = [
-        Binding('l', 'focus_right', 'Focus right', show=True),
-        Binding('h', 'focus_left', 'Focus left', show=True),
+        Binding('l', 'focus_right', 'Focus right', show=False),
+        Binding('h', 'focus_left', 'Focus left', show=False),
         Binding('right', 'focus_right', 'Focus right', show=True),
         Binding('left', 'focus_left', 'Focus left', show=True),
     ]
@@ -794,10 +787,18 @@ class InputScreen(BaseScreen[str]):
             _ = self.dismiss(Result(ResultType.Selection, _data=event.value))
 
 
+
+class _DataTable(DataTable[ValueT]):
+    BINDINGS: ClassVar = [
+        Binding("down", "cursor_down", "Down", show=True),
+        Binding("up", "cursor_up", "Up", show=True),
+        Binding('j', 'cursor_down', 'Down', show=False),
+        Binding('k', 'cursor_up', 'Up', show=False),
+    ]
+
+
 class TableSelectionScreen(BaseScreen[ValueT]):
     BINDINGS: ClassVar = [
-        Binding('j', 'cursor_down', 'Down', show=True),
-        Binding('k', 'cursor_up', 'Up', show=True),
         Binding('space', 'toggle_selection', 'Toggle', show=True),
     ]
 
@@ -887,16 +888,6 @@ class TableSelectionScreen(BaseScreen[ValueT]):
         assert TApp.app
         return await TApp.app.show(self)
 
-    def action_cursor_down(self) -> None:
-        table = self.query_one(DataTable)
-        next_row = min(table.cursor_row + 1, len(table.rows) - 1)
-        table.move_cursor(row=next_row, column=table.cursor_column or 0)
-
-    def action_cursor_up(self) -> None:
-        table = self.query_one(DataTable)
-        prev_row = max(table.cursor_row - 1, 0)
-        table.move_cursor(row=prev_row, column=table.cursor_column or 0)
-
     @override
     def compose(self) -> ComposeResult:
         if self._header:
@@ -912,11 +903,11 @@ class TableSelectionScreen(BaseScreen[ValueT]):
             if self._preview_location is None:
                 with Center():
                     with Vertical(classes='table-container'):
-                        yield ScrollableContainer(DataTable(id='data_table'))
+                        yield ScrollableContainer(_DataTable(id='data_table'))
 
             else:
                 with Vertical(classes='table-container'):
-                    yield ScrollableContainer(DataTable(id='data_table'))
+                    yield ScrollableContainer(_DataTable(id='data_table'))
                     yield Rule(orientation='horizontal')
                     if self._preview_header is not None:
                         yield Label(self._preview_header, classes='preview-header', id='preview-header')
@@ -1011,6 +1002,8 @@ class TableSelectionScreen(BaseScreen[ValueT]):
             table.update_cell(self._current_row_key, cell_key.column_key, '[X]')
 
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+        self._set_cursor(event.cursor_row)
+
         self._current_row_key = event.row_key
         item: MenuItem = event.row_key.value  # type: ignore[assignment]
 
@@ -1025,6 +1018,22 @@ class TableSelectionScreen(BaseScreen[ValueT]):
             return
 
         preview_widget.update('')
+
+    def _set_cursor(self, row_index: int) -> None:
+        data_table = self.query_one(DataTable)
+
+        target_y = sum(
+            [
+                data_table.region.y,  # padding/margin offset of the option list
+                row_index  # index of the highlighted row
+                -data_table.scroll_offset.y,  # scroll offset
+            ]
+        )
+
+        debug(f'Setting cursor to target_y: {target_y}')
+
+        self.app.cursor_position = Offset(data_table.region.x, target_y)
+        self.app.refresh()
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         if self._multi:
