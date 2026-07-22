@@ -20,7 +20,7 @@ from textual.widgets.selection_list import Selection
 from textual.worker import WorkerCancelled
 
 from archinstall.lib.log import debug
-from archinstall.lib.translationhandler import tr
+from archinstall.lib.translationhandler import N_, tr
 from archinstall.tui.menu_item import MenuItem, MenuItemGroup, MsgLevelType, PreviewResult
 from archinstall.tui.result import Result, ResultType
 
@@ -57,8 +57,8 @@ def _translate_bindings(source: BindingsMap | None, target: BindingsMap) -> None
 
 class BaseScreen(Screen[Result[ValueT]]):
 	BINDINGS: ClassVar = [
-		Binding('escape', 'cancel_operation', 'Cancel', show=True),
-		Binding('ctrl+c', 'reset_operation', 'Reset', show=True),
+		Binding('escape', 'cancel_operation', N_('Cancel'), show=True),
+		Binding('ctrl+c', 'reset_operation', N_('Reset'), show=True),
 	]
 
 	def __init__(self, allow_skip: bool = False, allow_reset: bool = False):
@@ -152,10 +152,10 @@ class LoadingScreen(BaseScreen[ValueT]):
 
 class _OptionList(OptionList):
 	BINDINGS: ClassVar = [
-		Binding('down', 'cursor_down', 'Down', show=True),
-		Binding('up', 'cursor_up', 'Up', show=True),
-		Binding('j', 'cursor_down', 'Down', show=False),
-		Binding('k', 'cursor_up', 'Up', show=False),
+		Binding('down', 'cursor_down', N_('Down'), show=True),
+		Binding('up', 'cursor_up', N_('Up'), show=True),
+		Binding('j', 'cursor_down', N_('Down'), show=False),
+		Binding('k', 'cursor_up', N_('Up'), show=False),
 	]
 
 	@override
@@ -169,7 +169,7 @@ class OptionListScreen(BaseScreen[ValueT]):
 	"""
 
 	BINDINGS: ClassVar = [
-		Binding('/', 'search', 'Search', show=True),
+		Binding('/', 'search', N_('Search'), show=True),
 	]
 
 	CSS = """
@@ -384,11 +384,11 @@ class OptionListScreen(BaseScreen[ValueT]):
 
 class _SelectionList(SelectionList[ValueT]):
 	BINDINGS: ClassVar = [
-		Binding('down', 'cursor_down', 'Down', show=True),
-		Binding('up', 'cursor_up', 'Up', show=True),
-		Binding('j', 'cursor_down', 'Down', show=False),
-		Binding('k', 'cursor_up', 'Up', show=False),
-		Binding('space', 'select', 'Toggle', show=True),
+		Binding('down', 'cursor_down', N_('Down'), show=True),
+		Binding('up', 'cursor_up', N_('Up'), show=True),
+		Binding('j', 'cursor_down', N_('Down'), show=False),
+		Binding('k', 'cursor_up', N_('Up'), show=False),
+		Binding('space', 'select', N_('Toggle'), show=True),
 	]
 
 	@override
@@ -402,8 +402,8 @@ class SelectListScreen(BaseScreen[ValueT]):
 	"""
 
 	BINDINGS: ClassVar = [
-		Binding('/', 'search', 'Search', show=True),
-		Binding('enter', '', 'Confirm', show=True),
+		Binding('/', 'search', N_('Search'), show=True),
+		Binding('enter', '', N_('Confirm'), show=True),
 	]
 
 	CSS = """
@@ -634,10 +634,10 @@ class SelectListScreen(BaseScreen[ValueT]):
 # DEPRECATED: Removed when switching to async
 class ConfirmationScreen(BaseScreen[ValueT]):
 	BINDINGS: ClassVar = [
-		Binding('l', 'focus_right', 'Focus right', show=False),
-		Binding('h', 'focus_left', 'Focus left', show=False),
-		Binding('right', 'focus_right', 'Focus right', show=True),
-		Binding('left', 'focus_left', 'Focus left', show=True),
+		Binding('l', 'focus_right', N_('Focus right'), show=False),
+		Binding('h', 'focus_left', N_('Focus left'), show=False),
+		Binding('right', 'focus_right', N_('Focus right'), show=True),
+		Binding('left', 'focus_left', N_('Focus left'), show=True),
 	]
 
 	CSS = """
@@ -902,12 +902,12 @@ class InputScreen(BaseScreen[str]):
 
 class _DataTable(DataTable[ValueT]):
 	BINDINGS: ClassVar = [
-		Binding('down', 'cursor_down', 'Down', show=True),
-		Binding('up', 'cursor_up', 'Up', show=True),
-		Binding('j', 'cursor_down', 'Down', show=False),
-		Binding('k', 'cursor_up', 'Up', show=False),
-		Binding('space', 'select', 'Toggle', show=True),
-		Binding('enter', 'select_cursor', 'Confirm', show=True),
+		Binding('down', 'cursor_down', N_('Down'), show=True),
+		Binding('up', 'cursor_up', N_('Up'), show=True),
+		Binding('j', 'cursor_down', N_('Down'), show=False),
+		Binding('k', 'cursor_up', N_('Up'), show=False),
+		Binding('space', 'select', N_('Toggle'), show=True),
+		Binding('enter', 'select_cursor', N_('Confirm'), show=True),
 	]
 
 	@override
@@ -917,7 +917,7 @@ class _DataTable(DataTable[ValueT]):
 
 class TableSelectionScreen(BaseScreen[ValueT]):
 	BINDINGS: ClassVar = [
-		Binding('space', 'toggle_selection', 'Toggle', show=True),  # expclit handling of space in multi-selection mode
+		Binding('space', 'toggle_selection', N_('Toggle'), show=True),  # expclit handling of space in multi-selection mode
 	]
 
 	CSS = """
@@ -1180,8 +1180,8 @@ class _AppInstance(App[ValueT]):
 	ENABLE_COMMAND_PALETTE = False
 
 	BINDINGS: ClassVar = [
-		Binding('f1', 'trigger_help', 'Show/Hide help', show=True),
-		Binding('ctrl+q', 'quit', 'Quit', show=True, priority=True),
+		Binding('f1', 'trigger_help', N_('Show/Hide help'), show=True),
+		Binding('ctrl+q', 'quit', N_('Quit'), show=True, priority=True),
 	]
 
 	CSS = """

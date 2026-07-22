@@ -14,8 +14,12 @@ usage() {
 }
 
 generate_pot() {
+	# 'tr' marks strings translated at runtime; 'N_' is a no-op marker for
+	# strings that can't be translated where they are defined (e.g. Textual
+	# BINDINGS descriptions) and are translated later at runtime. See
+	# tui/_textual_i18n.py for the Textual built-in binding descriptions.
 	find . -type f -iname '*.py' | sort \
-		| xargs xgettext --no-location --omit-header --keyword='tr' \
+		| xargs xgettext --no-location --omit-header --keyword='tr' --keyword='N_' \
 			-d base -o locales/base.pot
 }
 

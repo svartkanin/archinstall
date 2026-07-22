@@ -277,6 +277,18 @@ def tr(message: str) -> str:
 	return str(_DeferredTranslation(message))
 
 
+def N_(message: str) -> str:
+	"""No-op translation marker.
+
+	Returns the message unchanged, but flags it for extraction by xgettext
+	(via --keyword='N_'). Use it to mark strings that are defined where they
+	cannot be translated immediately - e.g. in class-level ``BINDINGS`` lists,
+	which Textual evaluates once at import time - and are translated later at
+	runtime with ``tr()``. This is the standard gettext ``gettext_noop`` pattern.
+	"""
+	return message
+
+
 builtins._ = _DeferredTranslation  # type: ignore[attr-defined]
 
 
